@@ -1,8 +1,8 @@
 import axios from 'axios';
 const BASE_URLS = {
-    AUTH: 'https://gateway-abwx.onrender.com',
-    TASKS: 'https://gateway-abwx.onrender.com',
-    GROUPS: 'https://gateway-abwx.onrender.com'
+    AUTH: 'https://task-manager-xp1g.onrender.com',
+    TASKS: 'https://task-manager-xp1g.onrender.com',
+    GROUPS: 'https://task-manager-xp1g.onrender.com'
 };
 
 

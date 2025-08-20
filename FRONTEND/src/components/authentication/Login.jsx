@@ -54,6 +54,7 @@ const LoginSignup = () => {
 
     setIsLoading(true);
     try {
+
       await authService.createUser(values, { withCredentials: true });
       alert("User created successfully!");
     } catch (err) {
