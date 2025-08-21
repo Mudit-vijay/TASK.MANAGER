@@ -35,8 +35,13 @@ const login = async (req, res) => {
             sameSite: 'LAX',
             maxAge: 24 * 60 * 60 * 1000,
         })
+        const result={
+            token:token,
+            name:user.name,
+            email:user.email
+            }
         console.log("final step")
-        return res.json( token );
+        return res.json( result );
     }
     catch (err) {
         console.log(`Login error:${err.message}`);
@@ -82,5 +87,6 @@ const createUser = async (req, res) => {
     }
 }
 module.exports = { login, createUser };
+
 
 
