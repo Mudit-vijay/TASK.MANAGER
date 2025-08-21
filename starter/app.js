@@ -7,7 +7,7 @@ const task = require('./routes/task')
 // const notFOund = require('./middleware/error-handler')
 require('dotenv').config()
 app.use(cors({
-    origin: ['https://gateway-abwx.onrender.com'],
+    origin: ['https://task-manager-xp1g.onrender.com'],
     credentials: true
 }))
 //middleware
@@ -29,3 +29,4 @@ const start = async () => {
     }
 }
 start()
+
