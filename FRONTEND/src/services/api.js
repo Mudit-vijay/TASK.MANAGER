@@ -22,9 +22,11 @@ const groupsApi = createApiInstance(BASE_URLS.GROUPS);
 
 export const authService = {
     login: async (credentials) => {//use spread operators here for merge request of two different groups so that two different id can be passed through one request body  
-        console.log("request chali");
+        console.log("request chali login ki");
         const response = await authApi.post('/api/v1/login', credentials);
-        return response.data;
+        console.log("request chali login ki 2");
+        console.log(response);
+        return response
     },
 
     createUser: async (userData) => {
@@ -86,3 +88,4 @@ export default {
     tasksApi,
     groupsApi
 };
+
