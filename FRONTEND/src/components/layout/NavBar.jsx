@@ -3,7 +3,7 @@ import TaskManager from "../task-manager/TaskManager";
 import { useDispatch, useSelector } from "react-redux";
 import LogoutIcon from "../../../svg/logout";
 const NavBar = () => {
-  const useName = useSelector;
+  const user = useSelector((state) => state.auth.name);
   const dispatch = useDispatch();
   const handleLogout = () => {
     // eslint-disable-next-line no-undef
@@ -24,7 +24,7 @@ const NavBar = () => {
                 onClick={handleLogout}
                 className="text-white text-2xl px-2 hover:text-gray-300 transition-colors"
               >
-                {useName}
+                {user}
                 <LogoutIcon />
               </button>
             </li>
@@ -39,3 +39,4 @@ const NavBar = () => {
 };
 
 export default NavBar;
+
