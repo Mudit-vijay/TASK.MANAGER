@@ -36,7 +36,7 @@ const login = async (req, res) => {
             maxAge: 24 * 60 * 60 * 1000,
         })
         console.log("final step")
-        return res.json({ msg: "login successfull" });
+        return res.json({ token });
     }
     catch (err) {
         console.log(`Login error:${err.message}`);
@@ -82,3 +82,4 @@ const createUser = async (req, res) => {
     }
 }
 module.exports = { login, createUser };
+
