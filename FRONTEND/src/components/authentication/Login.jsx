@@ -29,7 +29,8 @@ const LoginSignup = () => {
     setIsLoading(true);
     try {
       const result = await authService.login(values, { withCredentials: true });
-      const { user } = result;
+      console.log(result);
+      const  user = result;
       dispatch(setUserId(user._id));
       navigate("/taskManager");
     } catch (err) {
@@ -195,4 +196,5 @@ const LoginSignup = () => {
 };
 
 export default LoginSignup;
+
 
