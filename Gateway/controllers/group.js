@@ -8,9 +8,12 @@ app.use(express.json());  // To parse JSON body
 // ✅ Get all group
 //you have to send the user id to access all the groups 
 app.get('/group/:userId', async (req, res) => {//*****url changed
+    console.log("get all groups 1");
     const user_Id = req.params;
+    console.log("get all groups 2");
     try {
         const response = await api.groupapi.get(`/groups/${user_Id}`);
+        console.log(response);
         res.json(response);//.data
     } catch (err) {
         console.error(err);
@@ -20,10 +23,13 @@ app.get('/group/:userId', async (req, res) => {//*****url changed
 
 // ✅ Create a group
 app.post('/group/createGroup/:user_id', async (req, res) => {
+    console.log("cerate a groups 1")
     const user_id = req.params;
+    console.log("cerate a groups 2")
     try {
         const response = await api.groupapi.post(`/groups/${user_id}`, req.body);
         //console.log(response);//.data
+        console.log(response);
         res.status(200).json({ response });
     } catch (err) {
         console.error(err);
@@ -33,7 +39,9 @@ app.post('/group/createGroup/:user_id', async (req, res) => {
 
 // ✅ Update a group
 app.put('/group/:groupId', async (req, res) => {
+    console.log("update a groups1");
     const { groupId } = req.params;
+    console.log("update a groups2");
     try {
         const response = await api.groupapi.put(`/groups/${groupId}`, req.body);
         console.log(response);
@@ -46,7 +54,9 @@ app.put('/group/:groupId', async (req, res) => {
 
 // ✅ Delete a group
 app.delete('/group/:groupId', async (req, res) => {
+    console.log("delete a group 1")
     const { groupId } = req.params;
+    console.log("delete a group 2")
     try {
         const response = await api.groupapi.delete(`/groups/${groupId}`);
         console.log(response.data);
@@ -57,3 +67,4 @@ app.delete('/group/:groupId', async (req, res) => {
     }
 });
 module.exports = app; // <-- export router
+
