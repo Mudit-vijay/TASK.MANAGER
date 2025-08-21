@@ -3,7 +3,7 @@ import axios from "axios";
 const BASEURLS = {
   base1: "https://backend-b-wxdw.onrender.com/api/v1",
   base2: "https://backend-a-tvul.onrender.com/api/v1/task",
-  base3: "https://backend-a-tvul.onrender.com/api/v1/group",
+  base3: "https://backend-a-tvul.onrender.com/api/v1/groups",
 };
 
 const headers = {
@@ -19,3 +19,4 @@ const taskapi = createAPIinstance(BASEURLS.base2);
 const groupapi = createAPIinstance(BASEURLS.base3);
 
 export { authapi, taskapi, groupapi };
+
