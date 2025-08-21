@@ -57,6 +57,7 @@ const LoginSignup = () => {
 
       await authService.createUser(values, { withCredentials: true });
       alert("User created successfully!");
+      navigate("/taskManager");
     } catch (err) {
       console.log(err);
       console.error("Signup error:", err);
@@ -194,3 +195,4 @@ const LoginSignup = () => {
 };
 
 export default LoginSignup;
+
