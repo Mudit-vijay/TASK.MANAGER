@@ -6,7 +6,7 @@ const tasks = require('./controllers/tasks.js')
 const group = require('./controllers/group.js')
 
 app.use(cors({
-    origin: 'https://frontend-z583.onrender.com',
+    origin: 'https://task-manager-1-5jlg.onrender.com/',
     credentials: true,
 }));
 
@@ -20,3 +20,4 @@ const port = process.env.PORT || 8080;
 app.listen(port, () => {
     console.log(`Server is listening on port: ${port}`);
 });
+
