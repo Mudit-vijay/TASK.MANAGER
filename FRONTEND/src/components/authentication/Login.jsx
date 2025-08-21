@@ -6,7 +6,6 @@ import { useDispatch } from "react-redux";
 import {
   setName,
   setEmail,
-  setPassword,
 } from "../../../features/auth/auth-slice";
 import { setUserId } from "../../../features/userID/userId-slics";
 
@@ -22,14 +21,12 @@ const LoginSignup = () => {
       alert("Please fill in all login fields");
       return;
     }
-
-    dispatch(setEmail(email));
-    dispatch(setPassword(password));
-
     setIsLoading(true);
     try {
       const result = await authService.login(values, { withCredentials: true });
       console.log(result);
+    dispatch(setName(result.data.name));
+    dispatch(setEmail(result.data.email));
       const  user = result;
       dispatch(setUserId(user._id));
       navigate("/taskManager");
@@ -48,14 +45,10 @@ const LoginSignup = () => {
       alert("Please fill in all signup fields");
       return;
     }
-
     dispatch(setName(name));
     dispatch(setEmail(email));
-    dispatch(setPassword(password));
-
     setIsLoading(true);
     try {
-
       await authService.createUser(values, { withCredentials: true });
       alert("User created successfully!");
       navigate("/taskManager");
@@ -196,5 +189,6 @@ const LoginSignup = () => {
 };
 
 export default LoginSignup;
+
 
 
