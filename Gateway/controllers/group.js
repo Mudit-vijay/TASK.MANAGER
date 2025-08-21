@@ -7,27 +7,29 @@ app.use(express.json());  // To parse JSON body
 
 // ✅ Get all group
 //you have to send the user id to access all the groups 
-app.get('/group/:userId', async (req, res) => {//*****url changed
-    console.log("get all groups 1");
-    const {user_Id} = req.params;
-    console.log("get all groups 2");
-    try {
-        const response = await api.groupapi.get(`/groups/${user_Id}`);
-        console.log(response);
-        res.json(response);//.data
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ msg: 'Internal server error' });
-    }
+app.get('/group/:userId', async (req, res) => {
+  console.log("get all groups 1");
+  const { userId } = req.params;   // <-- fix variable name
+  console.log("get all groups 2, userId:", userId);
+
+  try {
+    const response = await api.groupapi.get(`/groups/${userId}`);
+    console.log(response.data);
+    res.json(response.data);   // use .data here
+  } catch (err) {
+    console.error("Gateway error:", err.message);
+    res.status(500).json({ msg: 'Internal server error' });
+  }
 });
 
+
 // ✅ Create a group
-app.post('/group/createGroup/:user_id', async (req, res) => {
+app.post('/group/createGroup/:userId', async (req, res) => {
     console.log("cerate a groups 1")
     const user_id = req.params;
     console.log("cerate a groups 2")
     try {
-        const response = await api.groupapi.post(`/groups/${user_id}`, req.body);
+        const response = await api.groupapi.post(`/groups/${userId}`, req.body);
         //console.log(response);//.data
         console.log(response);
         res.status(200).json({ response });
@@ -67,5 +69,6 @@ app.delete('/group/:groupId', async (req, res) => {
     }
 });
 module.exports = app; // <-- export router
+
 
 
