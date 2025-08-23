@@ -7,13 +7,15 @@ app.use(express.json());  // To parse JSON body
 
 // ✅ Get all group
 //you have to send the user id to access all the groups 
-app.get('/group/:userId', async (req, res) => {
+app.get('/group', async (req, res) => {
   console.log("get all groups 1");
-  const { userId } = req.params;   // <-- fix variable name
-  console.log("get all groups 2, userId:", userId);
-
   try {
-    const response = await api.groupapi.get(`/groups/${userId}`);
+      const response = await api.groupapi.get("/groups", {
+          withCredentials: true,
+          headers: {
+              'Content-Type': 'application/json',
+          },
+      });
     console.log(response.data);
     res.json(response.data);   // use .data here
   } catch (err) {
@@ -24,12 +26,17 @@ app.get('/group/:userId', async (req, res) => {
 
 
 // ✅ Create a group
-app.post('/group/createGroup/:userId', async (req, res) => {
+app.post('/group/create', async (req, res) => {
     console.log("cerate a groups 1")
     const user_id = req.params;
     console.log("cerate a groups 2")
     try {
-        const response = await api.groupapi.post(`/groups/${userId}`, req.body);
+        const response = await api.groupapi.post(`/groups}`,{
+            withCredentials:true,
+            headers:{
+                'Content-Type':'application/json',
+            },
+        },req.body);
         //console.log(response);//.data
         console.log(response);
         res.status(200).json({ response });
@@ -40,7 +47,7 @@ app.post('/group/createGroup/:userId', async (req, res) => {
 });
 
 // ✅ Update a group
-app.put('/group/:groupId', async (req, res) => {
+app.put('/group/:groupId/update', async (req, res) => {
     console.log("update a groups1");
     const { groupId } = req.params;
     console.log("update a groups2");
