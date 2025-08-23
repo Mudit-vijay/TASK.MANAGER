@@ -1,8 +1,8 @@
 import axios from 'axios';
 const BASE_URLS = {
-    AUTH: 'https://task-manager-xp1g.onrender.com',
-    TASKS: 'https://task-manager-xp1g.onrender.com',
-    GROUPS: 'https://task-manager-xp1g.onrender.com'
+    AUTH: 'https://task-manager-xp1g.onrender.com/api/v1',
+    TASKS: 'https://task-manager-xp1g.onrender.com/api/v1',
+    GROUPS: 'https://task-manager-xp1g.onrender.com/api/v1'
 };
 
 
@@ -23,7 +23,7 @@ const groupsApi = createApiInstance(BASE_URLS.GROUPS);
 export const authService = {
     login: async (credentials) => {//use spread operators here for merge request of two different groups so that two different id can be passed through one request body  
         console.log("request chali login ki");
-        const response = await authApi.post('/api/v1/login', credentials);
+        const response = await authApi.post('/login', credentials);
         console.log("request chali login ki 2");
         console.log(response);
         return response
@@ -31,41 +31,41 @@ export const authService = {
 
     createUser: async (userData) => {
         console.log("request chali");
-        const response = await authApi.post('/api/v1/createUser', userData);
+        const response = await authApi.post('/createUser', userData);
         return response.data;
     }
 };
 
 export const groupService = {
-    getGroups: async (groupId) => {
-        const response = await groupsApi.get(`/api/v1/group/${groupId}`);
+    getGroups: async () => {
+        const response = await groupsApi.get('/group');
         return response.data;
     },
-    createGroups: async (name, state, groupId) => {
-        const response = await groupsApi.post(`/group/${groupId}/task/create`, {
+    createGroups: async (name, state) => {
+        const response = await groupsApi.post('/group/create', {
             name,
             completed: state
         });
         return response.data;
     },
-    updateGroup: async (groupId, taskId, name) => {
-        const response = await groupsApi.post(`/api/v1/group/${groupId}/task/${taskId}`, {
+    updateGroup: async (groupId, name) => {
+        const response = await groupsApi.post( `/group/${groupId}/update`, {
             name
         });
         return response.data;
     },
     deleteGroup: async (id) => {
-        const response = await groupsApi.delete(`api/v1/group/${id}`);
+        const response = await groupsApi.delete(`/group/${id}`);
         return response.data;
     }
 };
 export const taskSERVICES = {
     getALLTASKS: async (groupId) => {
-        const response = await tasksApi.get(`/api/v1/task/${groupId}`);
+        const response = await tasksApi.get(`/task/${groupId}`);
         return response.data;
     },
     createTASK: async (groupId, name, state) => {
-        const response = await (`/api/v1/task/${groupId}/task/create`, {
+        const response = await (`/task/${groupId}/task/create`, {
             name: name,
             completed: state
         });
@@ -78,7 +78,7 @@ export const taskSERVICES = {
         return (await response).data;
     },
     deleteTASK: async (groupId, taskId) => {
-        const response = await groupsApi.delete(`/api/v1/task/${groupId}/task/${taskId}`)
+        const response = await groupsApi.delete(`/task/${groupId}/task/${taskId}`)
         return response.data;
     }
 }
