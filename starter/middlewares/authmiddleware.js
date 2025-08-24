@@ -1,15 +1,16 @@
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 
 const authMiddleware = (req, res, next) => {
-    const token = req.cookies.token;
-    if (!token) return res.status(401).json({ msg: 'No token found' });
+    const token = req.cookies?.token;
+    if (!token) return res.status(401).json({ msg: "No token found" });
 
     try {
         const decoded = jwt.verify(token, process.env.JWT);
         req.user = decoded;
         next();
     } catch (err) {
-        return res.status(403).json({ msg: 'Invalid token' });
+        return res.status(403).json({ msg: "Invalid token" });
     }
 };
+
 export default authMiddleware;

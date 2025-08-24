@@ -1,41 +1,34 @@
-const express = require('express');
-const Group = require('.././models/Group');
+import mongoose from "mongoose";
+import Group from "../models/Group.js";
 
-// get all groups of logged-in user
-const getAllGroups = async (req, res) => {
-    try {
-        const userID = req.user.id; // 👈 comes from token via authMiddleware
-        const groups = await Group.find({ user: userID }).populate('tasks');
-        res.status(200).json(groups);
-    } catch (err) {
-        res.status(500).json({ msg: 'Server error', error: err.message });
-    }
-};
-
-// create group for logged-in user
-const createGroup = async (req, res) => {
+export const getAllGroups = async (req, res) => {
     try {
         const userID = req.user.id;
-        const groupData = { ...req.body, user: userID }; // attach user
-        const group = await Group.create(groupData);
-        res.status(201).json({ msg: 'Group created successfully', group });
+        const groups = await Group.find({ user: userID }).populate("tasks");
+        res.status(200).json(groups);
     } catch (err) {
-        res.status(500).json({ msg: 'Internal server error', error: err.message });
+        res.status(500).json({ msg: "Server error", error: err.message });
     }
 };
 
-const updateGroup = async (req, res) => {
-    const groupId = req.params.id;
+export const createGroup = async (req, res) => {
+    try {
+        const group = await Group.create({ ...req.body, user: req.user.id });
+        res.status(201).json({ msg: "Group created successfully", group });
+    } catch (err) {
+        res.status(500).json({ msg: "Internal server error", error: err.message });
+    }
+};
 
+export const updateGroup = async (req, res) => {
+    const groupId = req.params.groupId;
     if (!mongoose.Types.ObjectId.isValid(groupId)) {
-        return res.status(400).json({ msg: 'Invalid group ID format' });
+        return res.status(400).json({ msg: "Invalid group ID format" });
     }
 
     try {
         const group = await Group.findById(groupId);
-        if (!group) {
-            return res.status(404).json({ msg: 'Group not found' });
-        }
+        if (!group) return res.status(404).json({ msg: "Group not found" });
 
         res.status(200).json({ group });
     } catch (err) {
@@ -43,23 +36,14 @@ const updateGroup = async (req, res) => {
     }
 };
 
-const deleteGroup = async (req, res) => {
-    const { groupId } = req.params;
+export const deleteGroup = async (req, res) => {
     try {
-        const group = await Group.findById(groupId);
-        if (!group) {
-            return res.status(404).json({ msg: `Group not found` });
-        }
-        await Group.findByIdAndDelete(groupId);
-        res.status(200).json({ msg: 'Group deleted successfully' });
+        const group = await Group.findById(req.params.groupId);
+        if (!group) return res.status(404).json({ msg: "Group not found" });
+
+        await Group.findByIdAndDelete(req.params.groupId);
+        res.status(200).json({ msg: "Group deleted successfully" });
     } catch (err) {
         res.status(500).json({ msg: "Internal server error", error: err.message });
     }
-};
-
-export{
-    getAllGroups,
-    createGroup,
-    updateGroup,
-    deleteGroup,
 };

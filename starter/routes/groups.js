@@ -3,7 +3,7 @@ import {
     getAllGroups,
     createGroup,
     updateGroup,
-    deleteGroup,
+    deleteGroup
 } from "../controlers_Task/groups.js";
 import authMiddleware from "../middlewares/authmiddleware.js";
 

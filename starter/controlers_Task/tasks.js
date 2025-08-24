@@ -1,11 +1,11 @@
-const Group = require('../models/Group');
-const Task = require('../models/tasks');
+import Group from "../models/Group.js";
+import Task from "../models/tasks.js";
 
 const getAllTaskks = async (req, res) => {
     const { groupId } = req.params;
     try {
-        const task = await Group.findById(groupId);
-        if (!task) {
+        const group = await Group.findById(groupId);
+        if (!group) {
             return res.status(404).json({ msg: `Group not found with id: ${groupId}` });
         }
 
@@ -32,7 +32,7 @@ const createtask = async (req, res) => {
         group.tasks.push(newTask._id);
         await group.save();
 
-        res.status(200).json({ msg: 'Task created successfully', task: newTask });
+        res.status(200).json({ msg: "Task created successfully", task: newTask });
     } catch (err) {
         console.error(err);
         res.status(500).json({ msg: "Internal server error", error: err.message });
@@ -49,7 +49,7 @@ const updatetask = async (req, res) => {
             return res.status(404).json({ msg: `Task not found with id: ${taskId}` });
         }
 
-        res.status(200).json({ msg: 'Task updated', task: updated });
+        res.status(200).json({ msg: "Task updated", task: updated });
     } catch (err) {
         res.status(500).json({ msg: "Internal server error", error: err.message });
     }
@@ -61,20 +61,20 @@ const deletetask = async (req, res) => {
     try {
         const group = await Group.findById(groupId);
         if (!group) {
-            return res.status(404).json({ msg: `Group not found` });
+            return res.status(404).json({ msg: "Group not found" });
         }
 
         group.tasks = group.tasks.filter(id => id.toString() !== taskId);
         await group.save();
 
         await Task.findByIdAndDelete(taskId);
-        res.status(200).json({ msg: 'Task deleted' });
+        res.status(200).json({ msg: "Task deleted" });
     } catch (err) {
         res.status(500).json({ msg: "Internal server error", error: err.message });
     }
 };
 
-export{
+export {
     getAllTaskks,
     createtask,
     updatetask,
