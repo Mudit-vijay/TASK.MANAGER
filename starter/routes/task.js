@@ -1,12 +1,12 @@
-const express = require("express");
-const router = express.Router();
-
-const {
+import express from "express";
+import {
     getAllTaskks,
     createtask,
     updatetask,
     deletetask
-} = require('../controlers_Task/tasks');
+} from "../controlers_Task/tasks.js";
+
+const router = express.Router();
 
 // ✅ Requires groupId param
 router.route('/:groupId/tasks')
@@ -17,4 +17,4 @@ router.route('/:groupId/tasks/:taskId')
     .patch(updatetask)
     .delete(deletetask);
 
-module.exports = router;
+export default router;
