@@ -7,9 +7,13 @@ const GroupSchema = new mongoose.Schema({
     },
     tasks: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Task'  // ✅ Provide the string model name here
-    }]
+        ref: 'Task'
+    }],
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'customer',
+        required: true
+    }
 });
 
 module.exports = mongoose.models.Group || mongoose.model('Group', GroupSchema);
-

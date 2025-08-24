@@ -1,27 +1,26 @@
 const express = require('express');
 const Group = require('.././models/Group');
 
-
+// get all groups of logged-in user
 const getAllGroups = async (req, res) => {
     try {
-        const userID=req.user.id
-        console.log(userID);
-        const groups = await Group.findById(userID).populate('tasks');
-        console.log(groups);
+        const userID = req.user.id; // 👈 comes from token via authMiddleware
+        const groups = await Group.find({ user: userID }).populate('tasks');
         res.status(200).json(groups);
     } catch (err) {
         res.status(500).json({ msg: 'Server error', error: err.message });
     }
 };
 
+// create group for logged-in user
 const createGroup = async (req, res) => {
-    const groupData = req.body;
     try {
+        const userID = req.user.id;
+        const groupData = { ...req.body, user: userID }; // attach user
         const group = await Group.create(groupData);
         res.status(201).json({ msg: 'Group created successfully', group });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ msg: "Internal server error", error: err.message });
+        res.status(500).json({ msg: 'Internal server error', error: err.message });
     }
 };
 
