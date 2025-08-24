@@ -1,19 +1,20 @@
-const express = require("express");
-const router = express.Router();
-
-const {
+import express from "express";
+import {
     getAllGroups,
     createGroup,
     updateGroup,
-    deleteGroup
-} = require('../controlers_Task/groups');
-const Authmiddleware = require("../middlewares/authmiddleware.js");
-router.route('/groups')
-    .get(Authmiddleware,getAllGroups)
-    .post(Authmiddleware,createGroup);
+    deleteGroup,
+} from "../controlers_Task/groups.js";
+import authMiddleware from "../middlewares/authmiddleware.js";
 
-router.route('/groups/:groupId')
-    .patch(Authmiddleware,updateGroup)
-    .delete(Authmiddleware,deleteGroup);
+const router = express.Router();
 
-module.exports = router;
+router.route("/groups")
+    .get(authMiddleware, getAllGroups)
+    .post(authMiddleware, createGroup);
+
+router.route("/groups/:groupId")
+    .patch(authMiddleware, updateGroup)
+    .delete(authMiddleware, deleteGroup);
+
+export default router;
