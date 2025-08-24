@@ -99,7 +99,7 @@ const TaskManager = () => {
   }
 
   return (
-      <div className="max-w-3xl mx-auto px-4">
+      <div className="max-w-3xl mx-auto px-4 mt-5">
         <div className="flex justify-between items-center my-6">
           <h2 className="text-2xl font-bold text-white">Your Groups</h2>
           <button

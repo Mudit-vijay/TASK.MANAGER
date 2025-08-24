@@ -7,13 +7,13 @@ const {
     updateGroup,
     deleteGroup
 } = require('../controlers_Task/groups');
-
+const Authmiddleware = require("../middlewares/authmiddleware.js");
 router.route('/groups')
-    .get(getAllGroups)
-    .post(createGroup);
+    .get(Authmiddleware,getAllGroups)
+    .post(Authmiddleware,createGroup);
 
 router.route('/groups/:groupId')
-    .patch(updateGroup)
-    .delete(deleteGroup);
+    .patch(Authmiddleware,updateGroup)
+    .delete(Authmiddleware,deleteGroup);
 
 module.exports = router;

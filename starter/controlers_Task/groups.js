@@ -4,7 +4,10 @@ const Group = require('.././models/Group');
 
 const getAllGroups = async (req, res) => {
     try {
-        const groups = await Group.find().populate('tasks');
+        const userID=req.user.id
+        console.log(userID);
+        const groups = await Group.findById(userID).populate('tasks');
+        console.log(groups);
         res.status(200).json(groups);
     } catch (err) {
         res.status(500).json({ msg: 'Server error', error: err.message });
