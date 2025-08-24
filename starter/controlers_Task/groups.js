@@ -57,7 +57,7 @@ const deleteGroup = async (req, res) => {
     }
 };
 
-module.exports = {
+export{
     getAllGroups,
     createGroup,
     updateGroup,
