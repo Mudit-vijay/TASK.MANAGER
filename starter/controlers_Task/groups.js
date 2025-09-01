@@ -2,11 +2,13 @@ import mongoose from "mongoose";
 import Group from "../models/Group.js";
 
 export const getAllGroups = async (req, res) => {
+    console.log("request received");
     try {
         const userID = req.user.id;
         const groups = await Group.find({ user: userID }).populate("tasks");
         res.status(200).json(groups);
     } catch (err) {
+        console.log(err);
         res.status(500).json({ msg: "Server error", error: err.message });
     }
 };
@@ -47,3 +49,4 @@ export const deleteGroup = async (req, res) => {
         res.status(500).json({ msg: "Internal server error", error: err.message });
     }
 };
+
