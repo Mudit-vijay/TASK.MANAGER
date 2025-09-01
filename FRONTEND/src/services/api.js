@@ -37,8 +37,8 @@ export const authService = {
 };
 
 export const groupService = {
-    getGroups: async () => {
-        const response = await groupsApi.get('/group');
+    getGroups: async (token) => {
+        const response = await groupsApi.get('/group',{token});
         return response.data;
     },
     createGroups: async (name, state) => {
