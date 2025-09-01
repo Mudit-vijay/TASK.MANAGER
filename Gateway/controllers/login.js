@@ -6,15 +6,15 @@ const app = express.Router();  // <-- use router, not app
 app.use(express.json());
 
 app.post('/login', async (req, res) => {
-    console.log("request comes 1");
+    // console.log("request comes 1");
     const { email, password } = req.body;
-    console.log(req.body);
+    // console.log(req.body);
     if (!email || !password) {
         return res.status(400).json({ msg: 'email and password are required' });
     }
     try {
         const response = await api.authapi.post('/login', req.body);
-        console.log(response);
+        // console.log(response);
         return res.status(200).json(response.data);
 
     } catch (err) {
