@@ -7,20 +7,28 @@ app.use(express.json());  // To parse JSON body
 
 // ✅ Get all group
 //you have to send the user id to access all the groups 
-app.get('/group/:token', async (req, res) => {
-console.log(req)
-console.log("request received on geteway");
-const {token}=req.params;
-console.log("token="+token)
-  try {
-      const response = await api.groupapi.get(`/groups/${token}`, );
-    console.log(response.data);
-    res.json(response.data);   // use .data here
-  } catch (err) {
-    console.error("Gateway error:", err.message);
-    res.status(500).json({ msg: 'Internal server error' });
-  }
+app.get("/groups", (req, res) => {
+
+    const authHeader = req.headers["authorization"];  // OR req.get("Authorization")
+
+    if (!authHeader) {
+        return res.status(401).json({ message: "No token provided" });
+    }
+
+
+    const token = authHeader.split(" ")[1];
+
+    console.log("Received Token:", token);
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded; // attach user info to request
+        res.json({ message: "Access granted", user: decoded });
+    } catch (err) {
+        res.status(403).json({ message: "Invalid token" });
+    }
 });
+
 
 
 // ✅ Create a group
