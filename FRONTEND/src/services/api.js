@@ -38,6 +38,7 @@ export const authService = {
 
 export const groupService = {
     getGroups: async (token) => {
+        console.log("request received")
         console.log(token);
         const response = await groupsApi.get('/group',{token});
         return response.data;
