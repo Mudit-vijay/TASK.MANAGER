@@ -7,6 +7,7 @@ const TaskManager = () => {
   const [group, setGroup] = useState([]);
   const [task, setAllTask] = useState([]);
   const token = useSelector((state) => state.token);
+  console.log(token);
   useEffect(() => {
     const getallgroups = async () => {
       try {
