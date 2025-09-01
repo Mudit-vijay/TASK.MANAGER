@@ -6,8 +6,9 @@ import { useDispatch } from "react-redux";
 import {
   setName,
   setEmail,
-  settoken,
+  
 } from "../../../features/auth/auth-slice";
+import settoken from "../../../features/token-slice.jsx";
 import { setUserId } from "../../../features/userID/userId-slics";
 
 const LoginSignup = () => {
@@ -193,6 +194,7 @@ const LoginSignup = () => {
 };
 
 export default LoginSignup;
+
 
 
 
