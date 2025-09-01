@@ -40,7 +40,9 @@ export const groupService = {
     getGroups: async (token) => {
         console.log("request received")
         console.log(token);
-        const response = await groupsApi.get('/group',{token});
+        const response = await groupsApi.get('/group',{   headers: {
+                Authorization: `Bearer ${token}`
+            }});
         return response.data;
     },
     createGroups: async (name, state) => {

@@ -11,6 +11,7 @@ const TaskManager = () => {
   console.log(token);
   useEffect(() => {
     const getallgroups = async () => {
+      console.log("it comes in getAllGroups")
       try {
         const response = await groupService.getGroups(token);
       console.log(response);
