@@ -1,10 +1,10 @@
 import axios from 'axios';
+
 const BASE_URLS = {
     AUTH: 'https://task-manager-xp1g.onrender.com/api/v1',
     TASKS: 'https://task-manager-xp1g.onrender.com/api/v1',
     GROUPS: 'https://task-manager-xp1g.onrender.com/api/v1'
 };
-
 
 const createApiInstance = (baseURL) => {
     return axios.create({
@@ -88,4 +88,5 @@ export default {
     tasksApi,
     groupsApi
 };
+
 
