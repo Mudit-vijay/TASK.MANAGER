@@ -6,6 +6,7 @@ import { useDispatch } from "react-redux";
 import {
   setName,
   setEmail,
+  settoken,
 } from "../../../features/auth/auth-slice";
 import { setUserId } from "../../../features/userID/userId-slics";
 
@@ -30,6 +31,8 @@ const LoginSignup = () => {
     dispatch(setEmail(result.data.email));
       const  user = result;
       dispatch(setUserId(user._id));
+      console.log(user.token);
+      dispatch(setoken(user.token));
       navigate("/taskManager");
     } catch (err) {
       console.error("Login error:", err);
@@ -190,6 +193,7 @@ const LoginSignup = () => {
 };
 
 export default LoginSignup;
+
 
 
 
