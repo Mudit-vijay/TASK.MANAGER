@@ -8,9 +8,9 @@ app.use(express.json());  // To parse JSON body
 // ✅ Get all group
 //you have to send the user id to access all the groups 
 app.get("/groups", (req, res) => {
-
+console.log("request received on get all groups");
     const authHeader = req.headers["authorization"];  // OR req.get("Authorization")
-
+console.log(authHeader)
     if (!authHeader) {
         return res.status(401).json({ message: "No token provided" });
     }
