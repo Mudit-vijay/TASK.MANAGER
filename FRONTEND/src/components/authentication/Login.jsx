@@ -24,6 +24,7 @@ const LoginSignup = () => {
     setIsLoading(true);
     try {
       const result = await authService.login(values, { withCredentials: true });
+      console.log("authentication");
       console.log(result);
     dispatch(setName(result.data.name));
     dispatch(setEmail(result.data.email));
@@ -189,6 +190,7 @@ const LoginSignup = () => {
 };
 
 export default LoginSignup;
+
 
 
 
