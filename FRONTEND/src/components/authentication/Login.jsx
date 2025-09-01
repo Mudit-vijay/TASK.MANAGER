@@ -32,7 +32,7 @@ const LoginSignup = () => {
       const  user = result;
       dispatch(setUserId(user._id));
       console.log(user.token);
-      dispatch(setoken(user.token));
+      dispatch(settoken(user.token));
       navigate("/taskManager");
     } catch (err) {
       console.error("Login error:", err);
@@ -193,6 +193,7 @@ const LoginSignup = () => {
 };
 
 export default LoginSignup;
+
 
 
 
