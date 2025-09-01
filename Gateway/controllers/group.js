@@ -9,6 +9,7 @@ app.use(express.json());  // To parse JSON body
 //you have to send the user id to access all the groups 
 app.get('/group', async (req, res) => {
   console.log("get all groups 1");
+  console.log(req.body);
   try {
       const response = await api.groupapi.get("/groups", {
           withCredentials: true,
@@ -76,6 +77,7 @@ app.delete('/group/:groupId', async (req, res) => {
     }
 });
 module.exports = app; // <-- export router
+
 
 
 
