@@ -6,12 +6,11 @@ import { useDispatch, useSelector } from "react-redux";
 const TaskManager = () => {
   const [group, setGroup] = useState([]);
   const [task, setAllTask] = useState([]);
-  const user = useSelector((state) => state.token);
-  console.log(user);
+  const token = useSelector((state) => state.token);
   useEffect(() => {
     const getallgroups = async () => {
       try {
-        const response = await groupService.getGroups();
+        const response = await groupService.getGroups(token);
       console.log(response);
         console.log("group service api call")
         setGroup(response);
