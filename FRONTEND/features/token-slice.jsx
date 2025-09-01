@@ -2,10 +2,12 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const tokenslice = createSlice({
   name: "token",
-  initialState: "",
+  initialState: {
+    token:"",
+  },
   reducers: {
     setToken: (state, action) => {
-      return action.payload;  // ✅ return the new token value
+      state.token= action.payload;  // ✅ return the new token value
     },
   },
 });
