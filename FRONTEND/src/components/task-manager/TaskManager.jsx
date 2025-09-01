@@ -11,8 +11,10 @@ const TaskManager = () => {
       try {
         const response = await groupService.getGroups();
       console.log(response);
+        console.log("group service api call")
         setGroup(response);
       } catch (err) {
+        console.log("group service api call error")
         console.log(err);
       }
     };
@@ -29,6 +31,8 @@ const TaskManager = () => {
     const buildGroupItems = async () => {
       for (let i = 0; i < group.length; i++) {
         const response = getALLTASK(group[i]._id);
+        console.log(response);
+        console.log("task service api call ")
         setAllTask((prev) => [...prev, response]);
         groupitems[i] = [];
         for (let j = 0; j < task.length; j++) {
@@ -123,4 +127,5 @@ const TaskManager = () => {
 };
 
 export default TaskManager;
+
 
