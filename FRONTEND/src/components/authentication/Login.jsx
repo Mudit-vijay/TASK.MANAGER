@@ -8,7 +8,7 @@ import {
   setEmail,
   
 } from "../../../features/auth/auth-slice";
-import settoken from "../../../features/token-slice.jsx";
+import setToken from "../../../features/token-slice.jsx";
 import { setUserId } from "../../../features/userID/userId-slics";
 
 const LoginSignup = () => {
@@ -194,6 +194,7 @@ const LoginSignup = () => {
 };
 
 export default LoginSignup;
+
 
 
 
