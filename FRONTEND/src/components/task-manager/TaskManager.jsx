@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useTasks } from "../../hooks/useTasks";
 import groupService, { taskSERVICES } from "../../services/api";
+import { useDispatch, useSelector } from "react-redux";
 
 const TaskManager = () => {
   const [group, setGroup] = useState([]);
   const [task, setAllTask] = useState([]);
-
+  const user = useSelector((state) => state.token);
+  console.log(user);
   useEffect(() => {
     const getallgroups = async () => {
       try {
@@ -127,5 +129,6 @@ const TaskManager = () => {
 };
 
 export default TaskManager;
+
 
 
