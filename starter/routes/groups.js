@@ -10,11 +10,11 @@ import authMiddleware from "../middlewares/authmiddleware.js";
 const router = express.Router();
 
 router.route("/groups")
-    .get(authMiddleware, getAllGroups)
-    .post(authMiddleware, createGroup);
+    .get(getAllGroups)
+    .post(createGroup);
 
 router.route("/groups/:groupId")
-    .patch(authMiddleware, updateGroup)
-    .delete(authMiddleware, deleteGroup);
+    .patch(updateGroup)
+    .delete(deleteGroup);
 
 export default router;

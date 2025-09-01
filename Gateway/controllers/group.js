@@ -8,15 +8,10 @@ app.use(express.json());  // To parse JSON body
 // ✅ Get all group
 //you have to send the user id to access all the groups 
 app.get('/group', async (req, res) => {
-  console.log("get all groups 1");
-  console.log(req.body);
+const token=req.params;
+console.log(token)
   try {
-      const response = await api.groupapi.get("/groups", {
-          withCredentials: true,
-          headers: {
-              'Content-Type': 'application/json',
-          },
-      });
+      const response = await api.groupapi.get(`/groups/${token}`, );
     console.log(response.data);
     res.json(response.data);   // use .data here
   } catch (err) {

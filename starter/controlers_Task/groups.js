@@ -3,8 +3,10 @@ import Group from "../models/Group.js";
 
 export const getAllGroups = async (req, res) => {
     console.log("request received");
+    const token=req.params;
     try {
-        const userID = req.user.id;
+        const decoded = jwt.verify(token, process.env.JWT);
+        console.log(decoded)
         const groups = await Group.find({ user: userID }).populate("tasks");
         res.status(200).json(groups);
     } catch (err) {
