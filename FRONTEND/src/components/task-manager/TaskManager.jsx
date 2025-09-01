@@ -10,6 +10,7 @@ const TaskManager = () => {
     const getallgroups = async () => {
       try {
         const response = await groupService.getGroups();
+      console.log(response);
         setGroup(response);
       } catch (err) {
         console.log(err);
@@ -122,3 +123,4 @@ const TaskManager = () => {
 };
 
 export default TaskManager;
+
