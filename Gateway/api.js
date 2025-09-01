@@ -1,11 +1,15 @@
 import axios from "axios";
 
-const BASEURLS = {
-  base1: "https://backend-b-wxdw.onrender.com/api/v1",
-  base2: "https://backend-a-tvul.onrender.com/api/v1/task",
-  base3: "https://backend-a-tvul.onrender.com/api/v1/group",
-};
-
+// const BASEURLS = {
+//   base1: "https://backend-b-wxdw.onrender.com/api/v1",
+//   base2: "https://backend-a-tvul.onrender.com/api/v1/task",
+//   base3: "https://backend-a-tvul.onrender.com/api/v1/group",
+// };
+const BASEURLS={
+  base1:"http://localhost:6969/api/v1",
+  base2:"http://localhost:3000/api/v1/task",
+  base3:"http://localhost:3000/api/v1/group",
+}
 const headers = {
   "Content-Type": "application/json",
 };

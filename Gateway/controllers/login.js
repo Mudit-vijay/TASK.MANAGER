@@ -6,7 +6,7 @@ const app = express.Router();  // <-- use router, not app
 app.use(express.json());
 
 app.post('/login', async (req, res) => {
-    // console.log("request comes 1");
+    console.log("request comes 1");
     const { email, password } = req.body;
     // console.log(req.body);
     if (!email || !password) {
@@ -24,7 +24,7 @@ app.post('/login', async (req, res) => {
 });
 
 app.post('/createUser', async (req, res) => {
-        console.log("request comes 1");
+    console.log("request comes 1");
     const { name, email, password } = req.body;
     if (!name || !email || !password) {
         return res.status(400).json({ msg: 'name, email, and password are required' });
