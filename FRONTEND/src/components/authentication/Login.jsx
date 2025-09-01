@@ -32,8 +32,8 @@ const LoginSignup = () => {
     dispatch(setEmail(result.data.email));
       const  user = result;
       dispatch(setUserId(user._id));
-      console.log(user.token);
-      dispatch(settoken(user.token));
+      console.log(result.data.token);
+      // dispatch(settoken(user.token));
       navigate("/taskManager");
     } catch (err) {
       console.error("Login error:", err);
@@ -194,6 +194,7 @@ const LoginSignup = () => {
 };
 
 export default LoginSignup;
+
 
 
 
