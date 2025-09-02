@@ -7,23 +7,21 @@ app.use(express.json());  // To parse JSON body
 
 // ✅ Get all group
 //you have to send the user id to access all the groups 
-app.get("/groups", (req, res) => {
-console.log("request received on get all groups");
+app.get("/groups", async (req, res) => {
+    console.log("request received on get all groups");
     const authHeader = req.headers["authorization"];  // OR req.get("Authorization")
-console.log(authHeader)
+    console.log(authHeader)
     if (!authHeader) {
         return res.status(401).json({ message: "No token provided" });
     }
-
-
     const token = authHeader.split(" ")[1];
-
-    console.log("Received Token:", token);
-
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded; // attach user info to request
-        res.json({ message: "Access granted", user: decoded });
+        const response = await api.groupapi.get('/groups', {
+            headers: {
+                Authorization: `${token}`
+            }
+        });
+        res.json({ message: "Access granted", response });
     } catch (err) {
         res.status(403).json({ message: "Invalid token" });
     }
@@ -37,12 +35,12 @@ app.post('/group/create', async (req, res) => {
     const user_id = req.params;
     console.log("cerate a groups 2")
     try {
-        const response = await api.groupapi.post(`/groups}`,{
-            withCredentials:true,
-            headers:{
-                'Content-Type':'application/json',
+        const response = await api.groupapi.post(`/groups}`, {
+            withCredentials: true,
+            headers: {
+                'Content-Type': 'application/json',
             },
-        },req.body);
+        }, req.body);
         //console.log(response);//.data
         console.log(response);
         res.status(200).json({ response });

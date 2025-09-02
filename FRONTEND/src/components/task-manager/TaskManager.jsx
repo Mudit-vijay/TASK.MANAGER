@@ -6,24 +6,24 @@ import { useDispatch, useSelector } from "react-redux";
 const TaskManager = () => {
   const [group, setGroup] = useState([]);
   const [task, setAllTask] = useState([]);
-  const token = useSelector((state) => state.token);
+  const token = localStorage.getItem("token");
   console.log("here it comes")
   console.log(token);
   useEffect(() => {
     const getallgroups = async () => {
-      console.log("it comes in getAllGroups")
+      console.log("Fetching groups with token:", token);
       try {
-        const response = await groupService.getGroups(token);
-      console.log(response);
-        console.log("group service api call")
+
+        const response = await groupService.getGroups();
+        console.log("Groups fetched:", response);
         setGroup(response);
       } catch (err) {
-        console.log("group service api call error")
-        console.log(err);
+        console.log("Error fetching groups:", err);
       }
     };
-    getallgroups();
-  }, []);
+    if (token) getallgroups();  // only call if token exists
+  }, [token]);
+
 
   const groupitems = [];
 
@@ -41,18 +41,18 @@ const TaskManager = () => {
         groupitems[i] = [];
         for (let j = 0; j < task.length; j++) {
           groupitems[i].push(
-              <li
-                  key={task[j]._id}
-                  className="flex items-center justify-between p-2 bg-gray-800 rounded-md mb-2 hover:bg-gray-700 transition"
+            <li
+              key={task[j]._id}
+              className="flex items-center justify-between p-2 bg-gray-800 rounded-md mb-2 hover:bg-gray-700 transition"
+            >
+              <span className="text-gray-200">{task[j].name}</span>
+              <button
+                onClick={() => handledelete(task[j]._id)}
+                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm"
               >
-                <span className="text-gray-200">{task[j].name}</span>
-                <button
-                    onClick={() => handledelete(task[j]._id)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm"
-                >
-                  Delete
-                </button>
-              </li>
+                Delete
+              </button>
+            </li>
           );
         }
       }
@@ -78,55 +78,55 @@ const TaskManager = () => {
 
   if (loading) {
     return (
-        <div className="flex justify-center items-center h-64 text-gray-300">
-          <div className="text-xl animate-pulse">Loading tasks...</div>
-        </div>
+      <div className="flex justify-center items-center h-64 text-gray-300">
+        <div className="text-xl animate-pulse">Loading tasks...</div>
+      </div>
     );
   }
 
   if (error) {
     return (
-        <div className="flex justify-center items-center h-64 text-red-400">
-          <div className="text-xl">Error: {error}</div>
-        </div>
+      <div className="flex justify-center items-center h-64 text-red-400">
+        <div className="text-xl">Error: {error}</div>
+      </div>
     );
   }
 
   const renderGroup = [];
   for (let i = 0; i < groupitems.length; i++) {
     renderGroup.push(
-        <div
-            key={group[i]._id}
-            className="bg-gray-900 rounded-xl p-5 shadow-md mb-6 border border-gray-700"
-        >
-          <h3 className="text-lg font-semibold text-white mb-3">
-            {group[i].name}
-          </h3>
-          <ul>{groupitems[i]}</ul>
-        </div>
+      <div
+        key={group[i]._id}
+        className="bg-gray-900 rounded-xl p-5 shadow-md mb-6 border border-gray-700"
+      >
+        <h3 className="text-lg font-semibold text-white mb-3">
+          {group[i].name}
+        </h3>
+        <ul>{groupitems[i]}</ul>
+      </div>
     );
   }
 
   return (
-      <div className="max-w-3xl mx-auto px-4 mt-5">
-        <div className="flex justify-between items-center my-6">
-          <h2 className="text-2xl font-bold text-white">Your Groups</h2>
-          <button
-              onClick={creategroup}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg shadow-md transition"
-          >
-            + Create New Group
-          </button>
-        </div>
-
-        <div>
-          {group.length === 0 ? (
-              <p className="text-gray-400 text-center py-10">No groups found</p>
-          ) : (
-              <div className="space-y-4">{renderGroup}</div>
-          )}
-        </div>
+    <div className="max-w-3xl mx-auto px-4 mt-5">
+      <div className="flex justify-between items-center my-6">
+        <h2 className="text-2xl font-bold text-white">Your Groups</h2>
+        <button
+          onClick={creategroup}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg shadow-md transition"
+        >
+          + Create New Group
+        </button>
       </div>
+
+      <div>
+        {group.length === 0 ? (
+          <p className="text-gray-400 text-center py-10">No groups found</p>
+        ) : (
+          <div className="space-y-4">{renderGroup}</div>
+        )}
+      </div>
+    </div>
   );
 };
 

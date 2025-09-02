@@ -44,12 +44,11 @@ export const authService = {
 };
 
 export const groupService = {
-    getGroups: async (token) => {
-        console.log("request received");
-        const response = await api.groupapi.get("/groups", {
+    getGroups: async () => {
+        const response = await groupsApi.get("/groups", {
             headers: {
-                Authorization: `Bearer ${token}`   // forward token properly
-            }
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
         });
         return response.data;
     },

@@ -4,31 +4,23 @@ const bcrypt = require('bcryptjs')
 const jwt_S = process.env.JWT
 const login = async (req, res) => {
     try {
-        console.log("request-1");
-        console.log("login request");
         const { email, password } = req.body;
         const user = await loginSchema.findOne({ email });
-        console.log("passed findings");
         if (!user) {
-            console.log("no one with these credentials");
             return res.status(404).json({
                 success: false,
                 message: "user not found"
             });
         }
-        console.log("passed findings 2");
         const ispasswordvalid = bcrypt.compareSync(password, user.password)
         if (!ispasswordvalid) {
-            console.log("password not matched");
             return res.status(400).json({ message: `user not present with that password` })
         }
-        console.log("token creation")
         const token = jwt.sign(
             { id: user._id, email: user.email },//, role: user.role
             jwt_S,
             { expiresIn: '1h' }
         )
-        console.log("cookie creation");
         res.cookie('token', token, {
             httpOnly: true,
             secure: true,

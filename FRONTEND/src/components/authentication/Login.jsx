@@ -6,7 +6,7 @@ import { useDispatch } from "react-redux";
 import {
   setName,
   setEmail,
-  
+
 } from "../../../features/auth/auth-slice";
 import { setToken } from "../../../features/token-slice.jsx";
 import { setUserId } from "../../../features/userID/userId-slics";
@@ -28,12 +28,14 @@ const LoginSignup = () => {
       const result = await authService.login(values, { withCredentials: true });
       console.log("authentication");
       console.log(result);
-    dispatch(setName(result.data.name));
-    dispatch(setEmail(result.data.email));
-      const  user = result;
+      console.log(result.cokies)
+      dispatch(setName(result.data.name));
+      dispatch(setEmail(result.data.email));
+      const user = result;
       dispatch(setUserId(user._id));
+      console.log("logging out token")
       console.log(result.data.token);
-      dispatch(setToken(result.data.token));
+      localStorage.setItem("token",result.data.token)
       navigate("/taskManager");
     } catch (err) {
       console.error("Login error:", err);
@@ -127,7 +129,7 @@ const LoginSignup = () => {
               Google
             </button>
           </div>
-                  <div>
+          <div>
             <h1>credentials</h1>
             <h1>ADMIN,ADMIN@gmail.com,Admin@123</h1>
           </div>

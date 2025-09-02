@@ -1,12 +1,17 @@
 import mongoose from "mongoose";
 import Group from "../models/Group.js";
+import jwt from "jsonwebtoken";
 
 export const getAllGroups = async (req, res) => {
     console.log("request received");
-    const token=req.params;
+    const token = req.headers["authorization"]; // lowercase!
+    console.log(token)
+
     try {
         const decoded = jwt.verify(token, process.env.JWT);
         console.log(decoded)
+        const userID = decoded.id
+        console.log(userID)
         const groups = await Group.find({ user: userID }).populate("tasks");
         res.status(200).json(groups);
     } catch (err) {
