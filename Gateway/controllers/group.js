@@ -1,5 +1,4 @@
 const express = require('express');
-const axios = require('axios');
 const api = require('../api.js'); // adjust as needed
 const app = express.Router();  // <
 
@@ -8,9 +7,8 @@ app.use(express.json());  // To parse JSON body
 // ✅ Get all group
 //you have to send the user id to access all the groups 
 app.get("/groups", async (req, res) => {
-    console.log("request received on get all groups");
     const authHeader = req.headers["authorization"];  // OR req.get("Authorization")
-    console.log(authHeader)
+
     if (!authHeader) {
         return res.status(401).json({ message: "No token provided" });
     }
@@ -21,8 +19,11 @@ app.get("/groups", async (req, res) => {
                 Authorization: `${token}`
             }
         });
-        res.json({ message: "Access granted", response });
+        console.log("printing response")
+        console.log(response.data);
+        return res.json({ response });
     } catch (err) {
+        console.log("comes in error")
         res.status(403).json({ message: "Invalid token" });
     }
 });
