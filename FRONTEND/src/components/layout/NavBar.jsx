@@ -17,20 +17,19 @@ const NavBar = () => {
             <li className="px-3 text-white font-semibold">TASK MANAGER</li>
           </ul>
         </div>
-       <div className="flex justify-end relative">
-  <ul className="flex items-center gap-4">
-    <li>
-      <button
-        onClick={handleLogout}
-        className="flex items-center gap-2 text-white text-2xl px-2 hover:text-gray-300 transition-colors"
-      >
-        <span>{user}</span>
-        <LogoutIcon />
-      </button>
-    </li>
-  </ul>
-</div>
-
+        <div className="flex justify-end relative">
+          <ul className="flex items-center gap-4">
+            <li>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 text-white text-2xl px-2 hover:text-gray-300 transition-colors"
+              >
+                <span>{user}</span>
+                <LogoutIcon />
+              </button>
+            </li>
+          </ul>
+        </div>
       </header>
       <div className="bg-[#353434] pb-[949px] mt-20 justify-start">
         <TaskManager />
@@ -40,5 +39,3 @@ const NavBar = () => {
 };
 
 export default NavBar;
-
-

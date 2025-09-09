@@ -1,28 +1,26 @@
 import React, { useEffect, useState } from "react";
-import { useTasks } from "../../hooks/useTasks";
+// import { useTasks } from "../../hooks/useTasks";
 import { groupService, taskSERVICES } from "../../services/api";
-import { useDispatch, useSelector } from "react-redux";
+// import { useDispatch, useSelector } from "react-redux";
 
 const TaskManager = () => {
   const [group, setGroup] = useState([]);
+  const [newGroupName, setNewGroupName] = useState("");
   const [task, setAllTask] = useState([]);
-  const token = localStorage.getItem("token");
+  // const token = localStorage.getItem("token");
+
   useEffect(() => {
     const getallgroups = async () => {
       try {
+        const result = await groupService.getGroups();
 
-        const response = await groupService.getGroups();
-        console.log(response.typeof())
-
-        console.log("Groups fetched:", response);
-        setGroup(response);
+        setGroup(result);
       } catch (err) {
         console.log("Error fetching groups:", err);
       }
     };
-    if (token) getallgroups();  // only call if token exists
+    getallgroups(); // only call if token exists
   }, []);
-
 
   const groupitems = [];
 
@@ -34,8 +32,7 @@ const TaskManager = () => {
     const buildGroupItems = async () => {
       for (let i = 0; i < group.length; i++) {
         const response = getALLTASK(group[i]._id);
-        console.log(response);
-        console.log("task service api call ")
+
         setAllTask((prev) => [...prev, response]);
         groupitems[i] = [];
         for (let j = 0; j < task.length; j++) {
@@ -59,18 +56,18 @@ const TaskManager = () => {
     buildGroupItems();
   }, [setGroup]);
 
-  const creategroup = async () => {
+  const creategroup = async (a, val) => {
     try {
-      console.log("request comes here ")
-      const response = await groupService.createGroups("testing-4", false);
-      setGroup((prev) => [...prev, response]);
+      const response = await groupService.createGroups(a, val);
+      //response.group.name
+      setGroup(() => [response]);
     } catch (err) {
       console.log(err);
     }
   };
 
   const handledelete = async (id) => {
-    await taskSERVICES.deleteTASK(id);
+    await groupService.deleteGroup(id);
     setGroup((prev) => prev.filter((group) => group._id != id));
   };
 
@@ -92,45 +89,57 @@ const TaskManager = () => {
   //   );
   // }
 
-  const renderGroup = [];
-  for (let i = 0; i < groupitems.length; i++) {
-    renderGroup.push(
-      <div
-        key={group[i]._id}
-        className="bg-gray-900 rounded-xl p-5 shadow-md mb-6 border border-gray-700"
+  const newArr = group?.data?.map((item) => {
+    return item;
+  });
+  // console.log(newArr);
+  const renderGroup = newArr?.map((groupName) => (
+    <div
+      key={groupName._id}
+      className="bg-gray-900 rounded-xl p-5 shadow-md mb-6 border border-gray-700"
+    >
+      <h3 className="text-lg font-semibold text-white mb-3">
+        {groupName.name}
+      </h3>
+      <ul>{groupName.name}</ul>
+      <button
+        onClick={() => {
+          handledelete(groupName._id);
+        }}
       >
-        <h3 className="text-lg font-semibold text-white mb-3">
-          {group[i].name}
-        </h3>
-        <ul>{groupitems[i]}</ul>
-      </div>
-    );
-  }
-
+        delete group
+      </button>
+    </div>
+  ));
   return (
-    <div className="max-w-3xl mx-auto px-4 mt-5">
-      <div className="flex justify-between items-center my-6">
-        <h2 className="text-2xl font-bold text-white">Your Groups</h2>
+    <div className="max-w-3xl mx-auto px-4 mt-10 pt-10">
+      <h2 className="text-3xl font-bold text-white text-center mb-8">
+        Task Manager
+      </h2>
+
+      {/* Create New Group */}
+      <div className="flex items-center space-x-4 mb-8">
+        <input
+          type="text"
+          value={newGroupName}
+          onChange={(e) => setNewGroupName(e.target.value)}
+          placeholder="New group name"
+          className="w-full px-4 py-2 rounded-md text-black"
+        />
         <button
-          onClick={creategroup}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg shadow-md transition"
+          onClick={() => creategroup(newGroupName, false)}
+          className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md shadow-md"
         >
-          + Create New Group
+          + Add Group
         </button>
       </div>
-
-      <div>
-        {group.length === 0 ? (
-          <p className="text-gray-400 text-center py-10">No groups found</p>
-        ) : (
-          <div className="space-y-4">{renderGroup}</div>
-        )}
-      </div>
+      {group.length === 0 ? (
+        <p className="text-gray-400 text-center py-10">No groups found</p>
+      ) : (
+        <div className="space-y-4">{renderGroup}</div>
+      )}
     </div>
   );
 };
 
 export default TaskManager;
-
-
-

@@ -3,12 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { authService } from "../../services/api";
 import { Formik, Form, Field } from "formik";
 import { useDispatch } from "react-redux";
-import {
-  setName,
-  setEmail,
-
-} from "../../../features/auth/auth-slice";
-import { setToken } from "../../../features/token-slice.jsx";
+import { setName, setEmail } from "../../../features/auth/auth-slice";
+// import { setToken } from "../../../features/token-slice.jsx";
 import { setUserId } from "../../../features/userID/userId-slics";
 
 const LoginSignup = () => {
@@ -28,12 +24,11 @@ const LoginSignup = () => {
       const result = await authService.login(values, { withCredentials: true });
 
       dispatch(setName(result.data.name));
-
       dispatch(setEmail(result.data.email));
       const user = result;
       dispatch(setUserId(user._id));
 
-      localStorage.setItem("token", result.data.token)
+      localStorage.setItem("token", result.data.token);
       navigate("/taskManager");
     } catch (err) {
       console.error("Login error:", err);
@@ -130,6 +125,7 @@ const LoginSignup = () => {
           <div>
             <h1>credentials</h1>
             <h1>ADMIN,ADMIN@gmail.com,Admin@123</h1>
+            <h1>User,User@gmail.com,User@123</h1>
           </div>
         </div>
 
@@ -194,16 +190,3 @@ const LoginSignup = () => {
 };
 
 export default LoginSignup;
-
-
-
-
-
-
-
-
-
-
-
-
-

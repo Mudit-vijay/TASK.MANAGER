@@ -29,15 +29,12 @@ const groupsApi = createApiInstance(BASE_URLS.GROUPS);
 
 export const authService = {
     login: async (credentials) => {
-        console.log("request chali login ki");
         const response = await authApi.post('/login', credentials);
-        console.log("request chali login ki 2");
-        console.log(response);
         return response;
     },
 
     createUser: async (userData) => {
-        console.log("request chali");
+
         const response = await authApi.post('/createUser', userData);
         return response.data;
     }
@@ -45,29 +42,38 @@ export const authService = {
 
 export const groupService = {
     getGroups: async () => {
+
         const response = await groupsApi.get("/groups", {
             headers: {
                 Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
         });
-        console.log("comes here");
-        console.log(response);
+
         return response;
     },
     createGroups: async (name, state) => {
-        console.log("request comes in api service")
-        console.log(name, state)
-        const response = await groupsApi.post('/group/create', {
-            name,
-            completed: state
-        });
+
+
+        const response = await groupsApi.post(
+            '/group/create',
+            { name, completed: state },  // Request body
+            {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                }
+            }
+        );
         return response.data;
     },
+
     updateGroup: async (groupId, name) => {
+        console.log("comes here in update group")
         const response = await groupsApi.post(`/group/${groupId}/update`, { name });
         return response.data;
     },
     deleteGroup: async (id) => {
+        console.log("comes here")
+        console.log(id)
         const response = await groupsApi.delete(`/group/${id}`);
         return response.data;
     }
