@@ -26,16 +26,14 @@ const LoginSignup = () => {
     setIsLoading(true);
     try {
       const result = await authService.login(values, { withCredentials: true });
-      console.log("authentication");
-      console.log(result);
-      console.log(result.cokies)
+
       dispatch(setName(result.data.name));
+
       dispatch(setEmail(result.data.email));
       const user = result;
       dispatch(setUserId(user._id));
-      console.log("logging out token")
-      console.log(result.data.token);
-      localStorage.setItem("token",result.data.token)
+
+      localStorage.setItem("token", result.data.token)
       navigate("/taskManager");
     } catch (err) {
       console.error("Login error:", err);

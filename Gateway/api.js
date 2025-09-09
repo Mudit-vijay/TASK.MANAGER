@@ -22,6 +22,6 @@ const authapi = createAPIinstance(BASEURLS.base1);
 const taskapi = createAPIinstance(BASEURLS.base2);
 const groupapi = createAPIinstance(BASEURLS.base3);
 
-module.export = { authapi, taskapi, groupapi };
+module.exports = { authapi, taskapi, groupapi };
 
 

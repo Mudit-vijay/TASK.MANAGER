@@ -21,9 +21,10 @@ app.get("/groups", async (req, res) => {
         });
         console.log("printing response")
         console.log(response.data);
-        return res.json({ response });
+        return response;
     } catch (err) {
         console.log("comes in error")
+        console.log(err)
         res.status(403).json({ message: "Invalid token" });
     }
 });
@@ -33,8 +34,6 @@ app.get("/groups", async (req, res) => {
 // ✅ Create a group
 app.post('/group/create', async (req, res) => {
     console.log("cerate a groups 1")
-    const user_id = req.params;
-    console.log("cerate a groups 2")
     try {
         const response = await api.groupapi.post(`/groups}`, {
             withCredentials: true,

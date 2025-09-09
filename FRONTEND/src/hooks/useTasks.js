@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { groupService } from '../services/api';
 
 export const useTasks = () => {
+    const [group, setGroup] = useState([])
     const [cardOrder, setCardOrder] = useState([]);
     const [lists, setLists] = useState({});
     const [loading, setLoading] = useState(true);
@@ -12,8 +13,10 @@ export const useTasks = () => {
         const fetchGroups = async () => {
             try {
                 setLoading(true);
-                const groups = await groupService.getGroups();
-
+                setGroup(await groupService.getGroups());
+                if (group.length == 0) {
+                    alert("no tasks are present")
+                }
                 const newCardOrder = groups.map(group => group.name);
                 const newLists = {};
 

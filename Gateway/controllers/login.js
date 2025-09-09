@@ -7,6 +7,7 @@ app.use(express.json());
 
 app.post('/login', async (req, res) => {
     console.log("request comes 1");
+    console.log(req.body)
     const { email, password } = req.body;
     // console.log(req.body);
     if (!email || !password) {

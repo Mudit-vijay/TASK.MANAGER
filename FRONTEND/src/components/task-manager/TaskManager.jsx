@@ -1,20 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { useTasks } from "../../hooks/useTasks";
-import groupService, { taskSERVICES } from "../../services/api";
+import { groupService, taskSERVICES } from "../../services/api";
 import { useDispatch, useSelector } from "react-redux";
 
 const TaskManager = () => {
   const [group, setGroup] = useState([]);
   const [task, setAllTask] = useState([]);
   const token = localStorage.getItem("token");
-  console.log("here it comes")
-  console.log(token);
   useEffect(() => {
     const getallgroups = async () => {
-      console.log("Fetching groups with token:", token);
       try {
 
         const response = await groupService.getGroups();
+        console.log(response.typeof())
+
         console.log("Groups fetched:", response);
         setGroup(response);
       } catch (err) {
@@ -22,7 +21,7 @@ const TaskManager = () => {
       }
     };
     if (token) getallgroups();  // only call if token exists
-  }, [token]);
+  }, []);
 
 
   const groupitems = [];
@@ -62,7 +61,8 @@ const TaskManager = () => {
 
   const creategroup = async () => {
     try {
-      const response = await groupService.creategroup("testing-4", false);
+      console.log("request comes here ")
+      const response = await groupService.createGroups("testing-4", false);
       setGroup((prev) => [...prev, response]);
     } catch (err) {
       console.log(err);
@@ -74,23 +74,23 @@ const TaskManager = () => {
     setGroup((prev) => prev.filter((group) => group._id != id));
   };
 
-  const { loading, error } = useTasks();
+  // const { loading, error } = useTasks();
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64 text-gray-300">
-        <div className="text-xl animate-pulse">Loading tasks...</div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="flex justify-center items-center h-64 text-gray-300">
+  //       <div className="text-xl animate-pulse">Loading tasks...</div>
+  //     </div>
+  //   );
+  // }
 
-  if (error) {
-    return (
-      <div className="flex justify-center items-center h-64 text-red-400">
-        <div className="text-xl">Error: {error}</div>
-      </div>
-    );
-  }
+  // if (error) {
+  //   return (
+  //     <div className="flex justify-center items-center h-64 text-red-400">
+  //       <div className="text-xl">Error: {error}</div>
+  //     </div>
+  //   );
+  // }
 
   const renderGroup = [];
   for (let i = 0; i < groupitems.length; i++) {

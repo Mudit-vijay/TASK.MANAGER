@@ -50,9 +50,13 @@ export const groupService = {
                 Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
         });
-        return response.data;
+        console.log("comes here");
+        console.log(response);
+        return response;
     },
     createGroups: async (name, state) => {
+        console.log("request comes in api service")
+        console.log(name, state)
         const response = await groupsApi.post('/group/create', {
             name,
             completed: state
