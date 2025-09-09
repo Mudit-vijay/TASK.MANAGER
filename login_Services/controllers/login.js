@@ -3,7 +3,6 @@ const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
 const jwt_S = process.env.JWT
 const login = async (req, res) => {
-    console.log("request comes here")
     try {
         const { email, password } = req.body;
         const user = await loginSchema.findOne({ email });
@@ -28,13 +27,13 @@ const login = async (req, res) => {
             sameSite: 'LAX',
             maxAge: 24 * 60 * 60 * 1000,
         })
-        const result = {
-            token: token,
-            name: user.name,
-            email: user.email
-        }
+        const result={
+            token:token,
+            name:user.name,
+            email:user.email
+            }
         console.log("final step")
-        return res.json(result);
+        return res.json( result );
     }
     catch (err) {
         console.log(`Login error:${err.message}`);
@@ -51,7 +50,7 @@ const createUser = async (req, res) => {
         }
         const saltRounds = 10;
         const hasshed_password = bcrypt.hashSync(password, saltRounds);
-        const user = await loginSchema.create({ name, email, password: hasshed_password });//{...hasshed_password}, role
+        const user = await loginSchema.create({ name, email, password: hasshed_password  });//{...hasshed_password}, role
         const token = jwt.sign(
             { id: user._id },//required so that groups are connected throught the group id and and can be fetched easily 
             jwt_S,
