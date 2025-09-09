@@ -25,12 +25,12 @@ app.use(express.json());
 app.use("/api/v1/task", taskRouter);
 app.use("/api/v1/group", groupRouter);
 // app.use(notFound);
-
+const port = 9000
 const start = async () => {
     try {
         await connectdb(process.env.MONGO_URI);
-        app.listen(3000, () => {
-            console.log("server is listening on port 3000");
+        app.listen(port, () => {
+            console.log(`server is listening on port ${port}`);
         });
     } catch (err) {
         console.error(err);

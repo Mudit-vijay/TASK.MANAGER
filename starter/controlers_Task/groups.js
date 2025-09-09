@@ -13,7 +13,6 @@ export const getAllGroups = async (req, res) => {
         const userID = decoded.id
         console.log(userID)
         const groups = await Group.find({ user: userID }).populate("tasks");
-        console.log(groups)
         res.status(200).json(groups);
     } catch (err) {
         console.log(err);
@@ -22,10 +21,15 @@ export const getAllGroups = async (req, res) => {
 };
 
 export const createGroup = async (req, res) => {
+    console.log("comes in create group")
+    const token = req.headers['authorization'];
+    console.log("loggin token")
+    console.log(token);
+    const decoded = jwt.verify(token, process.env.JWT);
+    const user_id = decoded.id;
     try {
-        console.log("request come here");
-        console.log(req.body)
-        const group = await Group.create({ ...req.body, user: req.user.id });
+        const group = await Group.create({ ...req.body, user: user_id });
+        console.log(group)
         res.status(201).json({ msg: "Group created successfully", group });
     } catch (err) {
         res.status(500).json({ msg: "Internal server error", error: err.message });
