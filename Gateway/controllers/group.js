@@ -14,6 +14,7 @@ app.get("/groups", async (req, res) => {
     }
     const token = authHeader.split(" ")[1];
     try {
+        console.log("comes in try")
         const response = await api.groupapi.get('/groups', {
             headers: {
                 Authorization: `${token}`
@@ -21,10 +22,9 @@ app.get("/groups", async (req, res) => {
         });
         console.log("printing response")
         console.log(response.data);
-        return response;
+        return res.status(200).json(response.data);
     } catch (err) {
         console.log("comes in error")
-        console.log(err)
         res.status(403).json({ message: "Invalid token" });
     }
 });
@@ -34,18 +34,26 @@ app.get("/groups", async (req, res) => {
 // ✅ Create a group
 app.post('/group/create', async (req, res) => {
     console.log("cerate a groups 1")
+    const authHeader = req.headers['authorization'];
+    console.log(authHeader)
+    if (!authHeader) {
+        return res.status(401).json({ msg: "token not present" });
+    }
+    const token = authHeader.split(" ")[1];
+    console.log("cerate a groups 2")
     try {
-        const response = await api.groupapi.post(`/groups}`, {
-            withCredentials: true,
+        console.log("comes in try 1")
+        const response = await api.groupapi.post(`/groups`,
+            req.body, {
             headers: {
-                'Content-Type': 'application/json',
-            },
-        }, req.body);
+                Authorization: `${token}`
+            }
+        });
         //console.log(response);//.data
-        console.log(response);
-        res.status(200).json({ response });
+        console.log(response.data);
+        res.status(200).json(response.data);
     } catch (err) {
-        console.error(err);
+        console.log("error")
         res.status(500).json({ msg: 'Internal server error' });
     }
 });
