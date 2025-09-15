@@ -11,7 +11,13 @@ const LoginSignup = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
-
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      // Optionally verify the token here (e.g., decode or ping backend)
+      navigate("/taskManager"); // Use absolute path
+    }
+  },);
   // ----- LOGIN -----
   const handleLogin = async (values) => {
     const { email, password } = values;
@@ -190,3 +196,4 @@ const LoginSignup = () => {
 };
 
 export default LoginSignup;
+
