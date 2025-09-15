@@ -6,7 +6,7 @@ const tasks = require('./controllers/tasks.js')
 const group = require('./controllers/group.js')
 
 app.use(cors({
-    // origin: 'https://task-manager-1-5jlg.onrender.com',
+    origin: 'https://task-manager-1-5jlg.onrender.com',
     origin:"http://localhost:5173",
     credentials: true,
 }));
