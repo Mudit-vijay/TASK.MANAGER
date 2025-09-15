@@ -1,16 +1,16 @@
 import axios from 'axios';
 
-// const BASE_URLS = {
-//     AUTH: 'https://task-manager-xp1g.onrender.com/api/v1',
-//     TASKS: 'https://task-manager-xp1g.onrender.com/api/v1',
-//     GROUPS: 'https://task-manager-xp1g.onrender.com/api/v1'
-// };
-
 const BASE_URLS = {
-    AUTH: 'http://localhost:8080/api/v1',
-    TASKS: 'http://localhost:8080/api/v1',
-    GROUPS: 'http://localhost:8080/api/v1'
+    AUTH: 'https://task-manager-xp1g.onrender.com/api/v1',
+    TASKS: 'https://task-manager-xp1g.onrender.com/api/v1',
+    GROUPS: 'https://task-manager-xp1g.onrender.com/api/v1'
 };
+
+// const BASE_URLS = {
+//     AUTH: 'http://localhost:8080/api/v1',
+//     TASKS: 'http://localhost:8080/api/v1',
+//     GROUPS: 'http://localhost:8080/api/v1'
+// };
 
 
 const createApiInstance = (baseURL) => {
