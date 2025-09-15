@@ -13,7 +13,7 @@ const app = express();
 app.use(
     cors({
         origin: ["https://task-manager-xp1g.onrender.com"],
-        origin: "https://localhost:8080/",
+        // origin: "https://localhost:8080/",
         credentials: true,
     })
 );
