@@ -1,224 +1,162 @@
-import React, { useState, useEffect } from "react";
-import api from './api'; // adjust this path if needed
-import {
-    DndContext,
-    PointerSensor,
-    useSensor,
-    useSensors,
-    closestCorners,
-    useDroppable
-} from "@dnd-kit/core";
-import {
-    SortableContext,
-    useSortable,
-    verticalListSortingStrategy,
-    arrayMove
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import React, { useEffect, useState } from "react";
+import { groupService, taskSERVICES } from "../../services/api";
 
-function SortableItem({ id }) {
-    const { attributes, listeners, setNodeRef, transform, isDragging } = useSortable({ id });
-    const style = {
-        transform: CSS.Transform.toString({
-            ...transform,
-            scaleX: isDragging ? 1.05 : 1,
-            scaleY: isDragging ? 1.05 : 1,
-            rotate: isDragging ? 3 : 0
-        }),
-        transition: "transform 200ms ease"
+const TaskManager = () => {
+  const [newTaskName, setNewTaskName] = useState("");
+  const [group, setGroup] = useState([]);
+  const [newGroupName, setNewGroupName] = useState("");
+
+  useEffect(() => {
+    const getAllGroups = async () => {
+      try {
+        const result = await groupService.getGroups();
+        console.log(result, "Groups fetched");
+        setGroup(result);
+      } catch (err) {
+        console.log("Error fetching groups:", err);
+      }
     };
-    return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            {...attributes}
-            {...listeners}
-            className={`py-1 cursor-move px-2 rounded-lg my-2 ${isDragging ? "shadow-lg" : ""}`}
+
+    getAllGroups();
+  }, []);
+
+  const handleDeleteGroup = async (id) => {
+    await groupService.deleteGroup(id);
+    setGroup((prev) => prev.filter((group) => group._id !== id));
+  };
+
+  const handleUpdateGroup = async (id, body) => {
+    await groupService.updateGroup(id, body);
+    setGroup((prev) => prev.filter((group) => group._id !== id));
+  };
+
+  const createGroup = async (name, val) => {
+    try {
+      const response = await groupService.createGroups(name, val);
+      setGroup([response]);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const handleCreateTask = async (groupID, name) => {
+    await taskSERVICES.createTASK(groupID, name);
+  };
+  const handleDeleteTask = async (groupId, taskId) => {
+    await taskSERVICES.deleteTASK(groupId, taskId);
+  };
+  const handleUpdateTask = async (groupId, taskId, data) => {
+    await taskSERVICES.updateTASK(groupId, taskId, data);
+  };
+  const newArr = group?.data?.map((item) => item);
+
+  let updateGroupData = { name: "group-99" };
+
+  const renderGroup = newArr?.map((grp) => (
+    <div
+      key={grp._id}
+      className="bg-gray-900 rounded-xl p-6 shadow-md mb-6 border border-gray-700"
+    >
+      <h3 className="text-xl font-semibold text-white mb-3">{grp.name}</h3>
+
+      <div className="flex space-x-4 mb-4">
+        <button
+          className="text-red-700 p-3 rounded-md"
+          onClick={() => handleDeleteGroup(grp._id)}
         >
-            {id}
-        </div>
-    );
-}
+          Delete Group
+        </button>
 
-function DroppableContainer({ id, items, children }) {
-    const { setNodeRef, isOver } = useDroppable({ id });
-    const { attributes, listeners } = useSortable({ id });
-    return (
-        <div
-            ref={setNodeRef}
-            {...attributes}
-            {...listeners}
-            className={`rounded-lg bg-gray-800 p-4 min-w-[200px] ${isOver ? "ring-2 ring-blue-400" : ""}`}
+        <button
+          className="text-white bg-blue-600 p-3 rounded-md"
+          onClick={() => handleUpdateGroup(grp._id, updateGroupData)}
         >
-            <h3 className="mb-2 text-white">{id}</h3>
-            <SortableContext items={items} strategy={verticalListSortingStrategy}>
-                {children}
-            </SortableContext>
-        </div>
-    );
-}
+          Update Group
+        </button>
+      </div>
 
-export default function TaskManager() {
-    const [cardOrder, setCardOrder] = useState([]);
-    const [lists, setLists] = useState({});
-    const [newTask, setNewTask] = useState("");
-    const [newGroup, setNewGroup] = useState("");
+      <div className="mt-4 flex items-center space-x-4">
+        <input
+          type="text"
+          placeholder="Enter new task name"
+          value={newTaskName}
+          onChange={(e) => setNewTaskName(e.target.value)}
+          className="p-2 rounded-md text-black flex-grow"
+        />
 
-    const sensors = useSensors(useSensor(PointerSensor));
+        <button
+          className="bg-green-600 text-white px-4 py-2 rounded-md"
+          onClick={() => {
+            handleCreateTask(grp._id, newTaskName);
+            setNewTaskName("");
+          }}
+        >
+          + Add Task
+        </button>
+      </div>
 
-    useEffect(() => {
-        fetchGroupsAndTasks();
-    }, []);
-
-    const fetchGroupsAndTasks = async () => {
-        try {
-            const groupsResponse = await api.taskapi.get('/task/groups');
-            const taskList = {};
-            const order = [];
-
-            for (const group of groupsResponse.data.groups) {
-                order.push(group._id);
-                const taskIds = group.tasks || [];
-                const taskTitles = [];
-
-                for (const id of taskIds) {
-                    const taskRes = await api.taskapi.get(`/task/group/${group._id}/task/${id}`);
-                    taskTitles.push(taskRes.data.task.name);
+      {/* Display tasks */}
+      <ul className="mt-4 space-y-2">
+        {grp.tasks?.length === 0 ? (
+          <li className="text-gray-400">No tasks in this group</li>
+        ) : (
+          grp.tasks.map((taskItem) => (
+            <li
+              key={taskItem._id}
+              className="flex justify-between items-center bg-gray-800 p-3 rounded-md"
+            >
+              <span className="text-green-400">{taskItem.name}</span>
+              <button
+                className="bg-red-500 text-white px-3 py-1 rounded-md text-sm"
+                onClick={() =>
+                  handleUpdateTask(grp._id, taskItem._id, "qwerty")
                 }
+              >
+                Update Task
+              </button>
+              <button
+                className="bg-red-500 text-white px-3 py-1 rounded-md text-sm"
+                onClick={() => handleDeleteTask(grp._id, taskItem._id)}
+              >
+                Delete Task
+              </button>
+            </li>
+          ))
+        )}
+      </ul>
+    </div>
+  ));
 
-                taskList[group._id] = taskTitles;
-            }
+  return (
+    <div className="max-w-4xl mx-auto px-6 mt-10 pt-10">
+      <h2 className="text-4xl font-bold text-white text-center mb-8">
+        Task Manager
+      </h2>
 
-            setCardOrder(order);
-            setLists(taskList);
-        } catch (err) {
-            console.error("Error fetching tasks/groups:", err);
-        }
-    };
+      {/* Create New Group */}
+      <div className="flex items-center space-x-4 mb-8">
+        <input
+          type="text"
+          value={newGroupName}
+          onChange={(e) => setNewGroupName(e.target.value)}
+          placeholder="New group name"
+          className="w-full px-4 py-2 rounded-md text-black"
+        />
+        <button
+          onClick={() => createGroup(newGroupName, false)}
+          className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md shadow-md"
+        >
+          + Add Group
+        </button>
+      </div>
 
-    const createGroup = async () => {
-        if (!newGroup.trim()) return;
-        try {
-            const res = await api.taskapi.post('/task/group', { name: newGroup });
-            await fetchGroupsAndTasks();
-            setNewGroup("");
-        } catch (err) {
-            console.error("Error creating group:", err);
-        }
-    };
+      {newArr?.length === 0 ? (
+        <p className="text-gray-400 text-center py-10">No groups found</p>
+      ) : (
+        <div className="space-y-6">{renderGroup}</div>
+      )}
+    </div>
+  );
+};
 
-    const createTask = async (groupId) => {
-        if (!newTask.trim()) return;
-        try {
-            await api.taskapi.post(`/task/group/${groupId}`, { name: newTask });
-            await fetchGroupsAndTasks();
-            setNewTask("");
-        } catch (err) {
-            console.error("Error creating task:", err);
-        }
-    };
-
-    const findContainer = (itemId) => {
-        for (const key of Object.keys(lists)) {
-            if (lists[key].includes(itemId)) {
-                return key;
-            }
-        }
-        return null;
-    };
-
-    const handleDragEnd = ({ active, over }) => {
-        if (!over) return;
-
-        if (cardOrder.includes(active.id) && cardOrder.includes(over.id)) {
-            const oldIndex = cardOrder.indexOf(active.id);
-            const newIndex = cardOrder.indexOf(over.id);
-            setCardOrder(arrayMove(cardOrder, oldIndex, newIndex));
-            return;
-        }
-
-        const activeContainer = findContainer(active.id);
-        const overContainer = cardOrder.includes(over.id) ? over.id : findContainer(over.id);
-        if (!activeContainer || !overContainer) return;
-
-        if (activeContainer === overContainer) {
-            const activeIndex = lists[activeContainer].indexOf(active.id);
-            const overIndex = lists[overContainer].indexOf(over.id);
-            setLists(prev => ({
-                ...prev,
-                [activeContainer]: arrayMove(prev[activeContainer], activeIndex, overIndex)
-            }));
-        } else {
-            const newActive = [...lists[activeContainer]];
-            newActive.splice(newActive.indexOf(active.id), 1);
-
-            const newOver = [...lists[overContainer]];
-            const overIndex = lists[overContainer].indexOf(over.id);
-            const insertAt = overIndex >= 0 ? overIndex : newOver.length;
-            newOver.splice(insertAt, 0, active.id);
-
-            setLists(prev => {
-                const updatedLists = {
-                    ...prev,
-                    [activeContainer]: newActive,
-                    [overContainer]: newOver
-                };
-                const cleanedLists = {};
-                const updatedCardOrder = [];
-                for (const cardId of cardOrder) {
-                    if (updatedLists[cardId]?.length) {
-                        cleanedLists[cardId] = updatedLists[cardId];
-                        updatedCardOrder.push(cardId);
-                    }
-                }
-                setCardOrder(updatedCardOrder);
-                return cleanedLists;
-            });
-        }
-    };
-
-    return (
-        <div className="p-4">
-            <div className="flex gap-4 mb-6">
-                <input
-                    type="text"
-                    value={newGroup}
-                    onChange={(e) => setNewGroup(e.target.value)}
-                    placeholder="New group name"
-                    className="p-2 border rounded"
-                />
-                <button onClick={createGroup} className="bg-blue-500 text-white px-4 py-2 rounded">
-                    Create Group
-                </button>
-                <input
-                    type="text"
-                    value={newTask}
-                    onChange={(e) => setNewTask(e.target.value)}
-                    placeholder="New task"
-                    className="p-2 border rounded"
-                />
-            </div>
-
-            <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-                <SortableContext items={cardOrder} strategy={verticalListSortingStrategy}>
-                    <div className="flex gap-4 text-white">
-                        {cardOrder.map(cardId => (
-                            <DroppableContainer key={cardId} id={cardId} items={lists[cardId]}>
-                                {lists[cardId]?.map(item => (
-                                    <SortableItem key={item} id={item} />
-                                ))}
-                                {lists[cardId]?.length === 0 && <div className="p-2 italic">Drop here</div>}
-                                <button
-                                    onClick={() => createTask(cardId)}
-                                    className="mt-2 bg-white text-black rounded px-2 py-1 text-sm"
-                                >
-                                    Add Task
-                                </button>
-                            </DroppableContainer>
-                        ))}
-                    </div>
-                </SortableContext>
-            </DndContext>
-        </div>
-    );
-}
+export default TaskManager;

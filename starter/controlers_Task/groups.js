@@ -37,15 +37,28 @@ export const createGroup = async (req, res) => {
 };
 
 export const updateGroup = async (req, res) => {
+    console.log("comes in update group")
     const groupId = req.params.groupId;
+    console.log(groupId)
+    console.log(req.body)
+    const name = req.body.body
+    // console.log(req.body)
     if (!mongoose.Types.ObjectId.isValid(groupId)) {
+        console.log("in first if")
         return res.status(400).json({ msg: "Invalid group ID format" });
     }
-
+    console.log("comes in update group 2")
     try {
         const group = await Group.findById(groupId);
         if (!group) return res.status(404).json({ msg: "Group not found" });
 
+        const updatedGroup = await Group.findByIdAndUpdate(
+            groupId,
+            { name },
+            { new: true }  // so it returns the updated document
+        );
+        console.log("pura ho gya")
+        console.log(updatedGroup)
         res.status(200).json({ group });
     } catch (err) {
         res.status(500).json({ msg: "Internal server error", error: err.message });

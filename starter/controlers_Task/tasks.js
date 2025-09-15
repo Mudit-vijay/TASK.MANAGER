@@ -19,11 +19,15 @@ const getAllTaskks = async (req, res) => {
 };
 
 const createtask = async (req, res) => {
+    // console.log("comes here")
     const { groupId } = req.params;
+    // console.log(groupId)
     const taskd = req.body;
+    // console.log(taskd)
 
     try {
         const group = await Group.findById(groupId);
+        // console.log(group)
         if (!group) {
             return res.status(404).json({ msg: `Group not found with id: ${groupId}` });
         }
@@ -31,6 +35,7 @@ const createtask = async (req, res) => {
         const newTask = await Task.create(taskd);
         group.tasks.push(newTask._id);
         await group.save();
+        console.log(group);
 
         res.status(200).json({ msg: "Task created successfully", task: newTask });
     } catch (err) {
@@ -40,8 +45,9 @@ const createtask = async (req, res) => {
 };
 
 const updatetask = async (req, res) => {
+    console.log("requeset received in update task backend")
     const { taskId } = req.params;
-    const updatedData = req.body;
+    const updatedData = req.body.a;
 
     try {
         const updated = await Task.findByIdAndUpdate(taskId, updatedData, { new: true });
@@ -56,8 +62,9 @@ const updatetask = async (req, res) => {
 };
 
 const deletetask = async (req, res) => {
+    console.log("delete request comes in backend")
     const { groupId, taskId } = req.params;
-
+    console.log(groupId, taskId)
     try {
         const group = await Group.findById(groupId);
         if (!group) {
