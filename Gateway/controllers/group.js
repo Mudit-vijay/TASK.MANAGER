@@ -62,13 +62,22 @@ app.post('/group/create', async (req, res) => {
 app.put('/group/:groupId/update', async (req, res) => {
     console.log("update a groups1");
     const { groupId } = req.params;
+    const authHeader = req.headers['Authorization']
+    const token = authHeader.split(" ")[1];
+    console.log(token)
     console.log("update a groups2");
+    console.log(groupId)
+    console.log(req.body);
     try {
-        const response = await api.groupapi.put(`/groups/${groupId}`, req.body);
-        console.log(response);
+        const response = await api.groupapi.patch(`/groups/${groupId}`, req.body, {
+            headers: {
+                Authorization: `${token}`
+            }
+        });
+
         res.status(200).json({ msg: 'Task update successful' });
     } catch (err) {
-        console.error(err);
+        // console.error(err);
         res.status(500).json({ msg: 'Internal server error' });
     }
 });

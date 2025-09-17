@@ -1,13 +1,20 @@
 import React from "react";
 import TaskManager from "../task-manager/TaskManager";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import LogoutIcon from "../../../svg/logout";
 const NavBar = () => {
+  const navigate = useNavigate();
   const user = useSelector((state) => state.auth.name);
   const dispatch = useDispatch();
   const handleLogout = () => {
     // eslint-disable-next-line no-undef
     dispatch(logout());
+  };
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    navigate("/");
   };
   return (
     <>
@@ -25,13 +32,19 @@ const NavBar = () => {
                 className="flex items-center gap-2 text-white text-2xl px-2 hover:text-gray-300 transition-colors"
               >
                 <span>{user}</span>
-                <LogoutIcon />
+                <span
+                  onClick={() => {
+                    logout();
+                  }}
+                >
+                  <LogoutIcon />
+                </span>
               </button>
             </li>
           </ul>
         </div>
       </header>
-      <div className="bg-[#353434] pb-[949px] mt-20 justify-start">
+      <div className="bg-[#353434] mt-20 justify-start">
         <TaskManager />
       </div>
     </>
