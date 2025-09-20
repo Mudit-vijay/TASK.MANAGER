@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { groupService, taskSERVICES } from "../../services/api";
+import axios from 'axios';
+
 
 const TaskManager = () => {
   const [newTaskName, setNewTaskName] = useState({});
@@ -8,6 +10,77 @@ const TaskManager = () => {
   const [state, setState] = useState(false);
   const [groupUpdateInputs, setGroupUpdateInputs] = useState({});
   const [taskUpdateInputs, setTaskUpdateInputs] = useState({});
+  const query = `query GetWorkspacesByEmail {
+  allWorkspaces(email: "alice@example.com") {
+    id
+    name
+    creatorName
+    role
+    member {
+      email
+      role
+    }
+  }
+}`;
+  //   const query = `
+  // mutation CreateWorkspace(
+  //   $name: String!
+  //   $role: Role!
+  //   $description: String!
+  //   $creatorName: String!
+  //   $members: [WorkspaceMemberInput!]!
+  // ) {
+  //   createWorkspace(
+  //     name: $name
+  //     role: $role
+  //     description: $description
+  //     creatorName: $creatorName
+  //     members: $members
+  //   ) {
+  //     id
+  //     name
+  //     creatorName
+  //     role
+  //     member {
+  //       email
+  //       role
+  //     }
+  //   }
+  // }`;
+  //   const variables = {
+  //     name: "My Workspace",
+  //     role: "ADMIN",
+  //     description: "This is a test workspace",
+  //     creatorName: "john.doe@example.com", // Add this
+  //     members: [
+  //       { email: "alice@example.com", role: "ADMIN" },
+  //       { email: "bob@example.com", role: "VIEWER" }
+  //     ]
+  //   };
+
+
+
+
+
+  useEffect(() => {
+    const fetchWorkspace = async () => {
+      try {
+
+        const response = await axios.post("http://localhost:9999/graphql", {
+          query
+        });
+
+        console.log("second query");
+        console.log("second response", response.data);
+
+      } catch (err) {
+        console.error("Error fetching workspace:", err);
+      }
+    };
+
+    fetchWorkspace();
+  }, []);
+
 
   useEffect(() => {
     const getAllGroups = async () => {

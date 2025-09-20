@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./components/authentication/Login";
 import NavBar from "./components/layout/NavBar";
-import Diskspace from "../temp/disk";
+import Diskspace from "../temp/phase_ii_ui";
 import ProtectedRoute from "./ProtectedRoute"; // Import the protected route
 import "./App.css";
 
@@ -13,7 +13,7 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route
-            path="/workspace/:id"
+            path="/phase2"
             element={
               <ProtectedRoute>
                 <Diskspace />
