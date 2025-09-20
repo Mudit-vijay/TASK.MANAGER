@@ -113,7 +113,7 @@ const LoginSignup = () => {
             )}
           </Formik>
 
-          <div className="mt-6 w-full text-center border-t border-gray-600 pt-4">
+          {/* <div className="mt-6 w-full text-center border-t border-gray-600 pt-4">
             <h3 className="text-gray-400 mb-3">Or sign in with</h3>
             <button
               className="bg-white text-black px-6 py-2 rounded-md transition hover:bg-gray-200"
@@ -126,7 +126,7 @@ const LoginSignup = () => {
             <h1>credentials</h1>
             <h1>ADMIN,ADMIN@gmail.com,Admin@123</h1>
             <h1>User,User@gmail.com,User@123</h1>
-          </div>
+          </div> */}
         </div>
 
         {/* --- SIGNUP CARD --- */}
