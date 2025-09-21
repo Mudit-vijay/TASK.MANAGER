@@ -24,12 +24,13 @@ const diskspace = () => {
   React.useEffect(() => {
     const fetchAllDiskspace = () => {
       try {
-        const response = axios.post("http://localhost:8080/graphql", {
+        const response = axios.post("http://localhost:9999/graphql", {
           mutation,
           variables,
         });
         setDisks(response);
       } catch (err) {
+        console.log(err);
         console.error(
           "sorry we are not able to fetch disk spaces at that time pelase try again later"
         );

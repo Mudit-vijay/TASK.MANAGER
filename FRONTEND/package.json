@@ -24,6 +24,7 @@
     "pragmatic-drag-and-drop": "^0.0.1-security",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-hook-form": "^7.63.0",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.6.3",
     "redux": "^5.0.1",
