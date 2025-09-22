@@ -66,19 +66,19 @@ const phase_ii_ui = () => {
     }`;
 
     const GET_WORKSPACES_QUERY = `
-        query GetWorkspaces {
-            allWorkspaces {
-                id
-                name
-                creatorName
+    query GetWorkspaces($id: ID, $email: String) {
+        allWorkspaces(id: $id, email: $email) {
+            id
+            name
+            creatorName
+            role
+            member {
+                email
                 role
-                member {
-                    email
-                    role
-                }
             }
         }
-    `;
+    }
+`;
 
     // Add new member
     const addMember = () => {
@@ -187,45 +187,44 @@ const phase_ii_ui = () => {
     };
 
     // Fetch all workspaces
-    const fetchWorkspaces = async () => {
-        try {
-            const response = await fetch("http://localhost:9999/graphql", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    query: GET_WORKSPACES_QUERY,
-                }),
-            });
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
 
-            const data = await response.json();
-
-            if (data.errors) {
-                console.error('GraphQL errors:', data.errors);
-            } else if (data.data && data.data.allWorkspaces) {
-                // Transform data to match UI expectations
-                const transformedWorkspaces = data.data.allWorkspaces.map(workspace => ({
-                    ...workspace,
-                    memberCount: workspace.member ? workspace.member.length : 0,
-                    description: workspace.description || 'No description provided',
-                    color: 'bg-indigo-500',
-                    groupCount: 0,
-                    groups: []
-                }));
-                setWorkspaces(transformedWorkspaces);
-            }
-        } catch (error) {
-            console.error('Error fetching workspaces:', error);
-        }
-    };
 
     // Load workspaces on component mount
     useEffect(() => {
-        fetchWorkspaces();
+        const fetchWorkspace = async (id = null, email = null) => {
+            try {
+                const token = localStorage.getItem('token');
+
+                const response = await fetch("http://localhost:9999/graphql", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        query: GET_WORKSPACES_QUERY,
+                        variables: { id, email }
+                    })
+                });
+
+                const responseData = await response.json();
+                console.log("Workspaces response:", responseData);
+
+                if (responseData.data?.allWorkspaces) {
+                    setWorkspaces(responseData.data.allWorkspaces.map(ws => ({
+                        ...ws,
+                        memberCount: ws.member ? ws.member.length : 0,
+                        groups: [],
+                        color: 'bg-indigo-500',
+                    })));
+                }
+
+            } catch (err) {
+                console.error("Error fetching workspaces:", err);
+            }
+        };
+
+        fetchWorkspace();
     }, []);
 
     const handleWorkspaceClick = (workspace) => {

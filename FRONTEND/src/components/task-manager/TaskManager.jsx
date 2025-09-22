@@ -10,66 +10,90 @@ const TaskManager = () => {
   const [state, setState] = useState(false);
   const [groupUpdateInputs, setGroupUpdateInputs] = useState({});
   const [taskUpdateInputs, setTaskUpdateInputs] = useState({});
-  const query = `query GetWorkspacesByEmail {
-  allWorkspaces(email: "alice@example.com") {
-    id
-    name
-    creatorName
-    role
-    member {
-      email
-      role
-    }
-  }
-}`;
+
+  // Query to fetch existing workspace data
   //   const query = `
-  // mutation CreateWorkspace(
-  //   $name: String!
-  //   $role: Role!
-  //   $description: String!
-  //   $creatorName: String!
-  //   $members: [WorkspaceMemberInput!]!
-  // ) {
-  //   createWorkspace(
-  //     name: $name
-  //     role: $role
-  //     description: $description
-  //     creatorName: $creatorName
-  //     members: $members
-  //   ) {
-  //     id
-  //     name
-  //     creatorName
-  //     role
-  //     member {
-  //       email
+  //   query GetAllWorkspaces($id: ID, $email: String) {
+  //     allWorkspaces(id: $id, email: $email) {
+  //       id
+  //       name
+  //       creatorName
   //       role
+  //       users
+  //       mail
   //     }
   //   }
-  // }`;
-  //   const variables = {
-  //     name: "My Workspace",
-  //     role: "ADMIN",
-  //     description: "This is a test workspace",
-  //     creatorName: "john.doe@example.com", // Add this
-  //     members: [
-  //       { email: "alice@example.com", role: "ADMIN" },
-  //       { email: "bob@example.com", role: "VIEWER" }
-  //     ]
+  // `;
+  const query = `
+  mutation {
+    createWorkspace(
+      name: "My Workspace",
+      creatorName: "John Doe",
+      role: ADMIN,
+      users: ["user1@example.com", "user2@example.com"],
+      mail: ["mailx@example.com", ]
+    ) {
+      id
+      name
+      creatorName
+      role
+      users
+      mail
+    }
+  }
+`;
+
+  // useEffect(() => {
+  //   const createWorkspace = async () => {
+  //     try {
+  //       const response = await axios.post(
+  //         "http://localhost:9999/graphql",
+  //         { query },  // send query as { query: "..." }
+  //         {
+  //           withCredentials: true,
+  //           headers: { 'Content-Type': 'application/json' }
+  //         }
+  //       );
+
+  //       console.log("Response:", response.data);
+  //     } catch (err) {
+  //       console.error("Error creating workspace:", err);
+  //     }
   //   };
 
+  //   createWorkspace();
+  // }, []);
 
-
-
+  const variables = {
+    id: "25",        // Fetch workspace with ID 1
+    email: "user1@example.com"    // No email filter
+  };
 
   useEffect(() => {
     const fetchWorkspace = async () => {
       try {
 
-        const response = await axios.post("http://localhost:9999/graphql", {
-          query
-        });
-
+        const response = await axios.post(
+          "http://localhost:9999/graphql",
+          {
+            query: `
+      query GetAllWorkspaces($id: ID, $email: String) {
+        allWorkspaces(id: $id, email: $email) {
+          id
+          name
+          creatorName
+          role
+          users
+          mail
+        }
+      }
+    `,
+            variables: variables,
+          },
+          {
+            withCredentials: true, // important if your backend requires cookies
+          }
+        );
         console.log("second query");
         console.log("second response", response.data);
 
