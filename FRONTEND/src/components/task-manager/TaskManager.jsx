@@ -1,7 +1,7 @@
+/* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from "react";
 import { groupService, taskSERVICES } from "../../services/api";
-import axios from 'axios';
-
+import axios from "axios";
 
 const TaskManager = () => {
   const [newTaskName, setNewTaskName] = useState({});
@@ -65,14 +65,13 @@ const TaskManager = () => {
   // }, []);
 
   const variables = {
-    id: "25",        // Fetch workspace with ID 1
-    email: "user1@example.com"    // No email filter
+    id: "25", // Fetch workspace with ID 1
+    email: "user1@example.com", // No email filter
   };
 
   useEffect(() => {
     const fetchWorkspace = async () => {
       try {
-
         const response = await axios.post(
           "http://localhost:9999/graphql",
           {
@@ -96,7 +95,6 @@ const TaskManager = () => {
         );
         console.log("second query");
         console.log("second response", response.data);
-
       } catch (err) {
         console.error("Error fetching workspace:", err);
       }
@@ -104,7 +102,6 @@ const TaskManager = () => {
 
     fetchWorkspace();
   }, []);
-
 
   useEffect(() => {
     const getAllGroups = async () => {

@@ -3,8 +3,10 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./components/authentication/Login";
 import NavBar from "./components/layout/NavBar";
 import Diskspace from "../temp/phase_ii_ui";
+import Groupspace from "../temp/groupView";
 import ProtectedRoute from "./ProtectedRoute"; // Import the protected route
 import "./App.css";
+import OAuthSuccess from "../temp/hack";
 
 const App = () => {
   return (
@@ -17,6 +19,20 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <Diskspace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/oauth-success"
+            element={
+              <OAuthSuccess />
+            }
+          />
+          <Route
+            path="/group/:id"
+            element={
+              <ProtectedRoute>
+                <Groupspace />
               </ProtectedRoute>
             }
           />
