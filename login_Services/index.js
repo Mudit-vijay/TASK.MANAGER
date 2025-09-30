@@ -12,13 +12,7 @@ const router = require('./routers/routes.js');
 
 app.use(express.json());
 app.use(cors({
-// <<<<<<< HEAD
     origin: 'https://task-manager-xp1g.onrender.com',
-    // origin: "https://localhost:8080/",
-// =======
-    // origin: 'https://task-manager-xp1g.onrender.com',
-//     origin: "https://localhost:8080/",
-// >>>>>>> 33251607f065c3833afaddc6a006e9a2ab46db2f
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
