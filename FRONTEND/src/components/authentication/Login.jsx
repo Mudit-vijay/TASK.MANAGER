@@ -46,8 +46,8 @@ const LoginSignup = () => {
 
   // ----- SIGNUP -----
   const handleSignup = async (values) => {
-    const { name, email, password, role } = values;
-    if (!name || !email || !password || !role) {
+    const { name, email, password } = values;
+    if (!name || !email || !password) {
       alert("Please fill in all signup fields");
       return;
     }
@@ -71,33 +71,6 @@ const LoginSignup = () => {
       setIsLoading(false);
     }
   };
-
-  // useEffect(() => {
-  //   async function fetchToken() {
-  //     try {
-  //       console.log("comes in fetch token");
-
-  //       const res = await axios.get("http://localhost:2144/api/stateless-oauth/token", { withCredentials: true });
-  //       console.log(res.data.access_token);
-  //     } catch (err) {
-  //       console.error(err.response?.data || err);
-  //     }
-  //   }
-  //   fetchToken()
-  // }, [state])
-  // async function fetchToken() {
-  //   try {
-  //     console.log("comes in fetch token");
-
-  //     const res = await axios.get(
-  //       "http://localhost:2144/api/stateless-oauth/token",
-  //       { withCredentials: true }
-  //     );
-  //     console.log(res.data.access_token);
-  //   } catch (err) {
-  //     console.error(err.response?.data || err);
-  //   }
-  // }
   const handleGoogleLogin = async () => {
     window.location.href =
       "https://oauth-service-fyrc.onrender.com/api/stateless-oauth/google";
@@ -188,7 +161,7 @@ const LoginSignup = () => {
           </p>
 
           <Formik
-            initialValues={{ name: "", email: "", password: "", role: "" }}
+            initialValues={{ name: "", email: "", password: "" }}
             onSubmit={handleSignup}
           >
             {({ values }) => (
@@ -214,24 +187,6 @@ const LoginSignup = () => {
                   className={inputClasses}
                   disabled={isLoading}
                 />
-
-                <Field
-                  as="select"
-                  name="role"
-                  className={
-                    inputClasses +
-                    " !bg-gray-700 text-white cursor-pointer appearance-none pr-8"
-                  }
-                  disabled={isLoading}
-                >
-                  <option value="" disabled>
-                    Select your role
-                  </option>
-                  <option value="CREATOR">CREATOR</option>
-                  <option value="ADMIN">ADMIN</option>
-                  <option value="VIEWER">VIEWER</option>
-                </Field>
-
                 <button
                   type="submit"
                   className={buttonClasses + " bg-teal-600 hover:bg-teal-700"}
@@ -239,8 +194,7 @@ const LoginSignup = () => {
                     isLoading ||
                     !values.name.trim() ||
                     !values.email.trim() ||
-                    !values.password.trim() ||
-                    !values.role
+                    !values.password.trim() 
                   }
                 >
                   {isLoading ? "Creating Account..." : "Sign Up"}
