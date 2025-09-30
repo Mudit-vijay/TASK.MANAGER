@@ -40,4 +40,52 @@ app.post('/createUser', async (req, res) => {
     }
 });
 
+app.post('/oauthcreation', async (req, res) => {
+    console.log("atleast request comes here");
+
+    try {
+        // Extract token from request headers
+        const header = req.body.headers["Authorization"];
+        const token = header.split(" ")[1];
+        console.log(token);
+
+        if (!token) {
+            return res.status(401).json({ msg: "Authorization header missing" });
+        }
+
+        // Forward request to your Spring/other API
+        const response = await api.authapi.post(
+            '/oauthcreation',
+            {}, // body (empty if not needed)
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+        console.log("logging out response in gateway");
+        console.log(response);
+        return res.status(200).json({
+            msg: "Account creation successful",
+            data: response.data
+        });
+    } catch (err) {
+        console.error("OAuth creation failed:", err.message);
+        return res.status(500).json({
+            msg: "Not able to create your account",
+            error: err.message
+        });
+    }
+});
+app.post('/otpverification', async (req, res) => {
+    try {
+        console.log("otp request comes in gateway");
+        const response = await api.authapi.post('/otpVerification', req.body);
+
+        return res.status(200).json({
+            msg: "otp verification successful",
+            data: response.data
+        });
+
+    } catch (err) {
+        return res.status(401).json({ msg: "otp verification completed successfull" })
+    }
+});
+
 module.exports = app;  // <-- export router

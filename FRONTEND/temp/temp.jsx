@@ -1,159 +1,197 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { groupService, taskSERVICES } from "../../services/api";
+const InputWithButton = ({
+  value,
+  onChange,
+  onSubmit,
+  placeholder,
+  buttonText,
+  buttonClass = "bg-blue-600 hover:bg-blue-700",
+  disabled = false,
+}) => (
+  <div className="flex flex-col sm:flex-row sm:space-x-3 space-y-3 sm:space-y-0">
+    <input
+      type="text"
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      disabled={disabled}
+      className="flex-1 px-3 py-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none disabled:opacity-50"
+    />
+    <button
+      className={`${buttonClass} text-white px-4 py-2 rounded w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed`}
+      onClick={onSubmit}
+      disabled={disabled || !value.trim()}
+    >
+      {buttonText}
+    </button>
+  </div>
+);
 
 const TaskManager = () => {
-  const [newTaskName, setNewTaskName] = useState("");
-  const [group, setGroup] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [newGroupName, setNewGroupName] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const getAllGroups = async () => {
-      try {
-        const result = await groupService.getGroups();
-        console.log(result, "Groups fetched");
-        setGroup(result);
-      } catch (err) {
-        console.log("Error fetching groups:", err);
-      }
-    };
+  // Memoized groups data
+  const groupsData = useMemo(() => groups?.data || [], [groups?.data]);
 
-    getAllGroups();
+  const fetchGroups = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const result = await groupService.getGroups();
+      setGroups(result);
+    } catch (err) {
+      setError("Failed to fetch groups. Please try again.");
+      console.error("Error fetching groups:", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const handleDeleteGroup = async (id) => {
-    await groupService.deleteGroup(id);
-    setGroup((prev) => prev.filter((group) => group._id !== id));
-  };
+  useEffect(() => {
+    fetchGroups();
+  }, [fetchGroups]);
 
-  const handleUpdateGroup = async (id, body) => {
-    await groupService.updateGroup(id, body);
-    setGroup((prev) => prev.filter((group) => group._id !== id));
-  };
+  const showError = useCallback((message) => {
+    setError(message);
+    setTimeout(() => setError(null), 5000);
+  }, []);
 
-  const createGroup = async (name, val) => {
-    try {
-      const response = await groupService.createGroups(name, val);
-      setGroup([response]);
-    } catch (err) {
-      console.log(err);
-    }
-  };
+  const handleDeleteGroup = useCallback(
+    async (id) => {
+      if (!window.confirm("Are you sure you want to delete this group?"))
+        return;
 
-  const handleCreateTask = async (groupID, name) => {
-    await taskSERVICES.createTASK(groupID, name);
-  };
-  const handleDeleteTask = async (groupId, taskId) => {
-    await taskSERVICES.deleteTASK(groupId, taskId);
-  };
-  const handleUpdateTask = async (groupId, taskId, data) => {
-    await taskSERVICES.updateTASK(groupId, taskId, data);
-  };
-  const newArr = group?.data?.map((item) => item);
+      try {
+        await groupService.deleteGroup(id);
+        await fetchGroups();
+      } catch (err) {
+        console.error(err);
+        showError("Failed to delete group. Please try again.");
+      }
+    },
+    [fetchGroups, showError]
+  );
 
-  let updateGroupData = { name: "group-99" };
+  const handleUpdateGroup = useCallback(
+    async (id, newName) => {
+      if (!newName.trim()) return;
 
-  const renderGroup = newArr?.map((grp) => (
-    <div
-      key={grp._id}
-      className="bg-gray-900 rounded-xl p-6 shadow-md mb-6 border border-gray-700"
-    >
-      <h3 className="text-xl font-semibold text-white mb-3">{grp.name}</h3>
+      try {
+        await groupService.updateGroup(id, newName);
+        await fetchGroups();
+      } catch (err) {
+        console.error(err);
+        showError("Group with that name already exists or update failed.");
+      }
+    },
+    [fetchGroups, showError]
+  );
 
-      <div className="flex space-x-4 mb-4">
-        <button
-          className="text-red-700 p-3 rounded-md"
-          onClick={() => handleDeleteGroup(grp._id)}
-        >
-          Delete Group
-        </button>
+  const createGroup = useCallback(
+    async (name) => {
+      if (!name.trim()) return;
 
-        <button
-          className="text-white bg-blue-600 p-3 rounded-md"
-          onClick={() => handleUpdateGroup(grp._id, updateGroupData)}
-        >
-          Update Group
-        </button>
+      try {
+        await groupService.createGroups(name, false);
+        await fetchGroups();
+        setNewGroupName("");
+      } catch (err) {
+        console.error(err);
+        showError("Group with that name already exists.");
+      }
+    },
+    [fetchGroups, showError]
+  );
+
+  const handleCreateTask = useCallback(
+    async (groupId, name) => {
+      if (!name.trim()) return;
+
+      try {
+        await taskSERVICES.createTASK(groupId, name);
+        await fetchGroups();
+      } catch (err) {
+        showError("Failed to create task. Please try again.", err);
+      }
+    },
+    [fetchGroups, showError]
+  );
+
+  const handleDeleteTask = useCallback(
+    async (groupId, taskId) => {
+      try {
+        await taskSERVICES.deleteTASK(groupId, taskId);
+        await fetchGroups();
+      } catch (err) {
+        showError("Failed to delete task. Please try again.", err);
+      }
+    },
+    [fetchGroups, showError]
+  );
+
+  const handleUpdateTask = useCallback(
+    async (groupId, taskId, newName) => {
+      if (!newName.trim()) return;
+
+      try {
+        await taskSERVICES.updateTASK(groupId, taskId, newName);
+        await fetchGroups();
+      } catch (err) {
+        showError("Failed to update task. Please try again.", err);
+      }
+    },
+    [fetchGroups, showError]
+  );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="text-2xl">Loading...</div>
       </div>
-
-      <div className="mt-4 flex items-center space-x-4">
-        <input
-          type="text"
-          placeholder="Enter new task name"
-          value={newTaskName}
-          onChange={(e) => setNewTaskName(e.target.value)}
-          className="p-2 rounded-md text-black flex-grow"
-        />
-
-        <button
-          className="bg-green-600 text-white px-4 py-2 rounded-md"
-          onClick={() => {
-            handleCreateTask(grp._id, newTaskName);
-            setNewTaskName("");
-          }}
-        >
-          + Add Task
-        </button>
-      </div>
-
-      {/* Display tasks */}
-      <ul className="mt-4 space-y-2">
-        {grp.tasks?.length === 0 ? (
-          <li className="text-gray-400">No tasks in this group</li>
-        ) : (
-          grp.tasks.map((taskItem) => (
-            <li
-              key={taskItem._id}
-              className="flex justify-between items-center bg-gray-800 p-3 rounded-md"
-            >
-              <span className="text-green-400">{taskItem.name}</span>
-              <button
-                className="bg-red-500 text-white px-3 py-1 rounded-md text-sm"
-                onClick={() =>
-                  handleUpdateTask(grp._id, taskItem._id, "qwerty")
-                }
-              >
-                Update Task
-              </button>
-              <button
-                className="bg-red-500 text-white px-3 py-1 rounded-md text-sm"
-                onClick={() => handleDeleteTask(grp._id, taskItem._id)}
-              >
-                Delete Task
-              </button>
-            </li>
-          ))
-        )}
-      </ul>
-    </div>
-  ));
+    );
+  }
 
   return (
-    <div className="max-w-4xl mx-auto px-6 mt-10 pt-10">
-      <h2 className="text-4xl font-bold text-white text-center mb-8">
-        Task Manager
-      </h2>
+    <div className="min-h-screen bg-gray-900 text-white py-12 px-4">
+      <h1 className="text-4xl font-bold text-center mb-10">Task Manager</h1>
 
-      {/* Create New Group */}
-      <div className="flex items-center space-x-4 mb-8">
-        <input
-          type="text"
+      {error && (
+        <div className="max-w-2xl mx-auto mb-6 p-4 bg-red-600 text-white rounded-lg">
+          {error}
+        </div>
+      )}
+
+      <div className="max-w-2xl mx-auto mb-10">
+        <InputWithButton
           value={newGroupName}
           onChange={(e) => setNewGroupName(e.target.value)}
+          onSubmit={() => createGroup(newGroupName)}
           placeholder="New group name"
-          className="w-full px-4 py-2 rounded-md text-black"
+          buttonText="Add Group"
+          buttonClass="bg-green-600 hover:bg-green-700"
         />
-        <button
-          onClick={() => createGroup(newGroupName, false)}
-          className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md shadow-md"
-        >
-          + Add Group
-        </button>
       </div>
 
-      {newArr?.length === 0 ? (
-        <p className="text-gray-400 text-center py-10">No groups found</p>
+      {groupsData.length === 0 ? (
+        <p className="text-gray-400 text-center text-lg">No groups available</p>
       ) : (
-        <div className="space-y-6">{renderGroup}</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
+          {groupsData.map((group) => (
+            <GroupCard
+              key={group._id}
+              group={group}
+              onDeleteGroup={handleDeleteGroup}
+              onUpdateGroup={handleUpdateGroup}
+              onCreateTask={handleCreateTask}
+              onDeleteTask={handleDeleteTask}
+              onUpdateTask={handleUpdateTask}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
