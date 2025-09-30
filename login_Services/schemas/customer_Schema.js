@@ -14,12 +14,12 @@ const customer_Schema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true
+    },
+    role: {
+        type: String,
+        default: "USER",
+        enum: ["CREATOR", "ADMIN", "USER"],
     }
-    // role: {
-    //     type: String,
-    //     default: "user",
-    //     enum: ["admin", "user"],
-    // }
 })
 const customer = new mongoose.model('customer', customer_Schema);
 module.exports = customer;

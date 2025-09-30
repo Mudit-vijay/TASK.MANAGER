@@ -1,60 +1,94 @@
+/* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from "react";
 import { groupService, taskSERVICES } from "../../services/api";
+// import { useDispatch, useSelector } from "react-redux";
 
 const TaskManager = () => {
   const [newTaskName, setNewTaskName] = useState({});
   const [group, setGroup] = useState([]);
   const [newGroupName, setNewGroupName] = useState("");
-  const [state, setState] = useState(false);
-  const [groupUpdateInputs, setGroupUpdateInputs] = useState({});
-  const [taskUpdateInputs, setTaskUpdateInputs] = useState({});
+  const [task, setAllTask] = useState([]);
+  // const token = localStorage.getItem("token");
 
   useEffect(() => {
-    const getAllGroups = async () => {
+    const getallgroups = async () => {
       try {
         const result = await groupService.getGroups();
+
         setGroup(result);
       } catch (err) {
-        console.error("Error fetching groups:", err);
+        console.log("Error fetching groups:", err);
       }
     };
-    getAllGroups();
-  }, [state]);
+    getallgroups(); // only call if token exists
+  }, []);
 
-  const handleDeleteGroup = async (id) => {
-    await groupService.deleteGroup(id);
-    setState(!state);
+  const groupitems = [];
+
+  const getALLTASK = async (id) => {
+    return await taskSERVICES.getALLTASKS(id);
   };
 
-  const handleUpdateGroup = async (id, body) => {
-    await groupService.updateGroup(id, body);
-    setState(!state);
-  };
+  useEffect(() => {
+    const buildGroupItems = async () => {
+      for (let i = 0; i < group.length; i++) {
+        const response = getALLTASK(group[i]._id);
 
-  const createGroup = async (name, val) => {
+        setAllTask((prev) => [...prev, response]);
+        groupitems[i] = [];
+        for (let j = 0; j < task.length; j++) {
+          groupitems[i].push(
+            <li
+              key={task[j]._id}
+              className="flex items-center justify-between p-2 bg-gray-800 rounded-md mb-2 hover:bg-gray-700 transition"
+            >
+              <span className="text-gray-200">{task[j].name}</span>
+              <button
+                onClick={() => handledelete(task[j]._id)}
+                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm"
+              >
+                Delete
+              </button>
+            </li>
+          );
+        }
+      }
+    };
+    buildGroupItems();
+  }, [setGroup]);
+
+  const creategroup = async (a, val) => {
     try {
-      const response = await groupService.createGroups(name, val);
-      setGroup([response]);
-      setState(!state);
+      const response = await groupService.createGroups(a, val);
+      //response.group.name
+      setGroup(() => [response]);
     } catch (err) {
-      console.error(err);
+      console.log(err);
     }
   };
 
-  const handleCreateTask = async (groupID, name) => {
-    await taskSERVICES.createTASK(groupID, name);
-    setState(!state);
+  const handledelete = async (id) => {
+    await groupService.deleteGroup(id);
+    setGroup((prev) => prev.filter((group) => group._id != id));
   };
 
-  const handleDeleteTask = async (groupId, taskId) => {
-    await taskSERVICES.deleteTASK(groupId, taskId);
-    setState(!state);
-  };
+  // const { loading, error } = useTasks();
 
-  const handleUpdateTask = async (groupId, taskId, data) => {
-    await taskSERVICES.updateTASK(groupId, taskId, data);
-    setState(!state);
-  };
+  // if (loading) {
+  //   return (
+  //     <div className="flex justify-center items-center h-64 text-gray-300">
+  //       <div className="text-xl animate-pulse">Loading tasks...</div>
+  //     </div>
+  //   );
+  // }
+
+  // if (error) {
+  //   return (
+  //     <div className="flex justify-center items-center h-64 text-red-400">
+  //       <div className="text-xl">Error: {error}</div>
+  //     </div>
+  //   );
+  // }
 
   const newArr = group?.data?.map((item) => item);
 
