@@ -21,7 +21,7 @@ function OAuthSuccess() {
         localStorage.removeItem("token");
         localStorage.setItem("token", res.data.data.token);
         // navigate(`/phase2/${id}`);
-        navigate(`/taskManager`);
+        navigate("/taskManager");
       } catch (err) {
         console.error("OAuth error:", err);
       }
