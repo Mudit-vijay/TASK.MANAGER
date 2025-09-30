@@ -1,35 +1,33 @@
 import { useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { authService } from "../src/services/api";
 
 function OAuthSuccess() {
   const navigate = useNavigate();
-  const { token } = useParams();
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  const token = params.get("token"); // <-- query param
 
   useEffect(() => {
     const handleOAuth = async () => {
+      if (!token) return;
       try {
         localStorage.setItem("token", token);
         console.log("Token stored:", token);
 
         const res = await authService.OauthCreation(token);
-        console.log("comes back");
-        console.log(res);
-        console.log("printing completed");
+        console.log("Backend response:", res);
+
         const id = res.data.data.id;
-        console.log(id);
-        localStorage.removeItem("token");
         localStorage.setItem("token", res.data.data.token);
-        // navigate(`/phase2/${id}`);
+
         navigate("/taskManager");
       } catch (err) {
         console.error("OAuth error:", err);
       }
     };
 
-    if (token) {
-      handleOAuth();
-    }
+    handleOAuth();
   }, [token, navigate]);
 
   return (
