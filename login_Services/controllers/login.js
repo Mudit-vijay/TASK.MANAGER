@@ -90,19 +90,20 @@ const login = async (req, res) => {
 // Create User Controller
 const createUser = async (req, res) => {
     try {
-        const { name, email, password, role } = req.body;
-        if (!name || !email || !password || !role) {
+        const { name, email, password } = req.body;
+        if (!name || !email || !password ) {
             return res.status(400).json({ message: "Name, email, role, and password are required" });
         }
 
         const hashedPassword = bcrypt.hashSync(password, 10);
         const otp = generateOTP();
         otpStore.set(email, otp);
+        const role="USER";
         const user = await loginSchema.create({
             name,
             email,
             password: hashedPassword,
-            role
+            role:role
         });
 
         const token = jwt.sign(
