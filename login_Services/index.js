@@ -13,11 +13,12 @@ const router = require('./routers/routes.js');
 app.use(express.json());
 app.use(cors({
     // origin: 'https://task-manager-xp1g.onrender.com',
-    origin:"https://localhost:8080/",
+    origin: "https://localhost:8080/",
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
 app.use('/api/v1/', router)
+
 function verifyToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];

@@ -37,6 +37,32 @@ export const authService = {
 
         const response = await authApi.post('/createUser', userData);
         return response.data;
+    },
+    OauthCreation: async () => {
+        // console.log("request comes here");
+
+        // console.log(localStorage.getItem("tokenOauth"));
+
+        const response = await authApi.post('/oauthcreation', {
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+        });
+        // console.log("printing response");
+
+        // console.log(response);
+
+        return response;
+
+    },
+    otpVerification: async (otp, email) => {
+        console.log("request chali");
+        console.log(otp);
+        const data = {
+            otp, email
+        }
+        const res = await authApi.post('/otpverification', { data })
+        return res;
     }
 };
 

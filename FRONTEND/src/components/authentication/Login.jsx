@@ -1,19 +1,23 @@
+/* eslint-disable no-unused-vars */
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../../services/api";
 import { Formik, Form, Field } from "formik";
 import { useDispatch } from "react-redux";
 import { setName, setEmail } from "../../../features/auth/auth-slice";
+import { setOtp } from "../../../features/auth/authsliceii";
 // import { setToken } from "../../../features/token-slice.jsx";
 import { setUserId } from "../../../features/userID/userId-slics";
 import { useEffect } from "react";
-import axios from 'axios';
+import axios from "axios";
 
 const LoginSignup = () => {
+  console.log("editing to check");
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
-  const [state, setState] = useState(false)
+  const [isLoadingg, setIsLoadingg] = useState(false);
+
   // ----- LOGIN -----
   const handleLogin = async (values) => {
     const { email, password } = values;
@@ -24,26 +28,26 @@ const LoginSignup = () => {
     setIsLoading(true);
     try {
       const result = await authService.login(values, { withCredentials: true });
-
+      const user = result;
+      // const otp = result.OTP;
+      localStorage.setItem("token", result.data.token);
       dispatch(setName(result.data.name));
       dispatch(setEmail(result.data.email));
-      const user = result;
-      dispatch(setUserId(user._id));
-
-      localStorage.setItem("token", result.data.token);
-      navigate("/taskManager");
+      dispatch(setUserId(result._id));
+      // dispatch(setOtp(otp));
+      navigate(`/verify-otp/:${result.id}`);
     } catch (err) {
       console.error("Login error:", err);
       alert("Login failed. Please check your credentials.");
     } finally {
-      setIsLoading(false);
+      setIsLoadingg(false);
     }
   };
 
   // ----- SIGNUP -----
   const handleSignup = async (values) => {
-    const { name, email, password } = values;
-    if (!name || !email || !password) {
+    const { name, email, password, role } = values;
+    if (!name || !email || !password || !role) {
       alert("Please fill in all signup fields");
       return;
     }
@@ -51,9 +55,14 @@ const LoginSignup = () => {
     dispatch(setEmail(email));
     setIsLoading(true);
     try {
-      await authService.createUser(values, { withCredentials: true });
-      alert("User created successfully!");
-      navigate("/taskManager");
+      const result = await authService.createUser(values, {
+        withCredentials: true,
+      });
+      const otpp = result.OTP;
+      dispatch(setOtp(otpp));
+      dispatch(setUserId(result.id));
+      localStorage.setItem("token", result.token);
+      navigate(`/verify-otp/:${result.id}`);
     } catch (err) {
       console.log(err);
       console.error("Signup error:", err);
@@ -76,129 +85,110 @@ const LoginSignup = () => {
   //   }
   //   fetchToken()
   // }, [state])
-  async function fetchToken() {
-    try {
-      console.log("comes in fetch token");
+  // async function fetchToken() {
+  //   try {
+  //     console.log("comes in fetch token");
 
-      const res = await axios.get("http://localhost:2144/api/stateless-oauth/token", { withCredentials: true });
-      console.log(res.data.access_token);
-    } catch (err) {
-      console.error(err.response?.data || err);
-    }
-  }
+  //     const res = await axios.get(
+  //       "http://localhost:2144/api/stateless-oauth/token",
+  //       { withCredentials: true }
+  //     );
+  //     console.log(res.data.access_token);
+  //   } catch (err) {
+  //     console.error(err.response?.data || err);
+  //   }
+  // }
   const handleGoogleLogin = async () => {
-    const width = 500;
-    const height = 600;
-    const left = window.screen.width / 2 - width / 2;
-    const top = window.screen.height / 2 - height / 2;
-
-    // Open the popup
-    // const popup = await window.open(
-    //   "http://localhost:2144/api/stateless-oauth/google",
-    //   "Google Login",
-    //   `width=${width},height=${height},top=${top},left=${left}`
-    // );
-    window.location.href = "http://localhost:2144/api/stateless-oauth/google";
-
-    const res = await axios.get("http://localhost:2144/api/stateless-oauth/token", { withCredentials: true });
-    await console.log(res.data.access_token);
-
-    // // Listen for messages from the popup
-    // window.addEventListener("message", async (event) => {
-    //   console.log(event)
-    //   // Make sure the message is from your backend origin
-    //   if (event.origin !== "http://localhost:2144") return;
-
-    //   if (event.data === "oauth-success") {
-    //     // Popup successfully completed login
-    //     setState(!state);
-    //     const res = await fetchToken(); // call your /token endpoint
-    //     console.log(res);
-    //     popup.close(); // close the popup safely
-    //   }
-    // });
+    window.location.href =
+      "https://oauth-service-fyrc.onrender.com/api/stateless-oauth/google";
   };
 
   // ----- Styling -----
   const inputClasses =
-    "w-full bg-gray-800 text-white placeholder-gray-400 border border-gray-600 rounded-md p-3 text-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300";
+    "w-full bg-gray-800 text-white placeholder-gray-400 border border-gray-600 rounded-xl p-4 text-lg mb-5 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition duration-300 shadow-sm";
 
   const buttonClasses =
-    "w-full text-white py-2 rounded-md text-lg mt-3 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed";
+    "w-full text-white py-3 rounded-xl text-lg mt-4 transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-md";
+
+  const googleButtonClasses =
+    "w-full bg-white text-gray-900 px-5 py-3 rounded-xl flex items-center justify-center space-x-3 font-semibold transition hover:bg-gray-200 shadow-md transform hover:-translate-y-0.5 active:translate-y-0";
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-900 text-white p-4">
-      <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-10">
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-gray-950 to-gray-800 text-white p-6 font-sans">
+      <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-12">
         {/* --- LOGIN CARD --- */}
-        <div className="bg-gray-800 shadow-xl rounded-xl p-8 flex flex-col justify-center items-center transition-all duration-500 hover:shadow-2xl">
-          <h2 className="text-3xl font-bold mb-6 text-center text-blue-400">
-            Welcome Back 👋
+        <div className="bg-gray-800 bg-opacity-80 backdrop-blur-sm shadow-2xl rounded-3xl p-10 flex flex-col items-center transition-transform duration-500 hover:scale-[1.02] hover:shadow-3xl border border-gray-700">
+          <h2 className="text-3xl md:text-4xl font-extrabold mb-4 text-indigo-400 text-center tracking-tight">
+            Welcome Back! 👋
           </h2>
-          <p className="text-sm text-gray-400 mb-6">
-            Login to your Task Manager
+          <p className="text-gray-300 mb-6 text-center text-lg leading-relaxed">
+            Login to your Task Manager and continue where you left off.
           </p>
 
           <Formik
-            initialValues={{ email: "", password: "" }}
+            initialValues={{ email: "", password: "", OTP: "" }}
             onSubmit={handleLogin}
           >
-            {() => (
+            {({ values }) => (
               <Form className="w-full">
                 <Field
                   type="email"
                   name="email"
                   placeholder="Email"
                   className={inputClasses}
-                  disabled={isLoading}
+                  disabled={isLoadingg}
                 />
-
                 <Field
                   type="password"
                   name="password"
                   placeholder="Password"
                   className={inputClasses}
-                  disabled={isLoading}
+                  disabled={isLoadingg}
                 />
 
                 <button
                   type="submit"
-                  className={buttonClasses + " bg-blue-600 hover:bg-blue-700"}
-                  disabled={isLoading}
+                  className={
+                    buttonClasses + " bg-indigo-600 hover:bg-indigo-700"
+                  }
+                  disabled={isLoadingg}
                 >
-                  {isLoading ? "Logging in..." : "Login"}
+                  {isLoadingg ? "Logging in..." : "Login"}
                 </button>
               </Form>
             )}
           </Formik>
 
-          <div className="mt-6 w-full text-center border-t border-gray-600 pt-4">
-            <h3 className="text-gray-400 mb-3">Or sign in with</h3>
+          <div className="mt-6 w-full text-center border-t border-gray-700 pt-6">
+            <h3 className="text-gray-300 mb-4 text-md font-semibold">
+              Or connect with
+            </h3>
             <button
-              className="bg-white text-black px-6 py-2 rounded-md transition hover:bg-gray-200"
-              disabled={isLoading}
+              className={googleButtonClasses}
+              disabled={isLoadingg || isLoading}
               onClick={handleGoogleLogin}
             >
-              Google
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/4/4a/Logo_2013_Google.png"
+                alt="Google logo"
+                className="h-6 w-6"
+              />
+              <span>Sign in with Google</span>
             </button>
-          </div>
-          <div>
-            <h1>credentials</h1>
-            <h1>ADMIN,ADMIN@gmail.com,Admin@123</h1>
-            <h1>User,User@gmail.com,User@123</h1>
           </div>
         </div>
 
         {/* --- SIGNUP CARD --- */}
-        <div className="bg-gray-800 shadow-xl rounded-xl p-8 flex flex-col justify-center items-center transition-all duration-500 hover:shadow-2xl">
-          <h2 className="text-3xl font-bold mb-6 text-center text-green-400">
-            Create an Account
+        <div className="bg-gray-800 bg-opacity-80 backdrop-blur-sm shadow-2xl rounded-3xl p-10 flex flex-col items-center transition-transform duration-500 hover:scale-[1.02] hover:shadow-3xl border border-gray-700">
+          <h2 className="text-3xl md:text-4xl font-extrabold mb-4 text-teal-400 text-center tracking-tight">
+            Create Your Account
           </h2>
-          <p className="text-sm text-gray-400 mb-6">
-            Start organizing your tasks
+          <p className="text-gray-300 mb-6 text-center text-lg leading-relaxed">
+            Join the Task Manager community and boost your productivity.
           </p>
 
           <Formik
-            initialValues={{ name: "", email: "", password: "" }}
+            initialValues={{ name: "", email: "", password: "", role: "" }}
             onSubmit={handleSignup}
           >
             {({ values }) => (
@@ -206,11 +196,10 @@ const LoginSignup = () => {
                 <Field
                   type="text"
                   name="name"
-                  placeholder="Name"
+                  placeholder="Full Name"
                   className={inputClasses}
                   disabled={isLoading}
                 />
-
                 <Field
                   type="email"
                   name="email"
@@ -218,26 +207,43 @@ const LoginSignup = () => {
                   className={inputClasses}
                   disabled={isLoading}
                 />
-
                 <Field
                   type="password"
                   name="password"
-                  placeholder="Password"
+                  placeholder="Create Password"
                   className={inputClasses}
                   disabled={isLoading}
                 />
 
+                <Field
+                  as="select"
+                  name="role"
+                  className={
+                    inputClasses +
+                    " !bg-gray-700 text-white cursor-pointer appearance-none pr-8"
+                  }
+                  disabled={isLoading}
+                >
+                  <option value="" disabled>
+                    Select your role
+                  </option>
+                  <option value="CREATOR">CREATOR</option>
+                  <option value="ADMIN">ADMIN</option>
+                  <option value="VIEWER">VIEWER</option>
+                </Field>
+
                 <button
                   type="submit"
-                  className={buttonClasses + " bg-green-600 hover:bg-green-700"}
+                  className={buttonClasses + " bg-teal-600 hover:bg-teal-700"}
                   disabled={
                     isLoading ||
                     !values.name.trim() ||
                     !values.email.trim() ||
-                    !values.password.trim()
+                    !values.password.trim() ||
+                    !values.role
                   }
                 >
-                  {isLoading ? "Creating..." : "Create Account"}
+                  {isLoading ? "Creating Account..." : "Sign Up"}
                 </button>
               </Form>
             )}

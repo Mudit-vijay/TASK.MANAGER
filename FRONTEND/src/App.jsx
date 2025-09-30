@@ -7,25 +7,21 @@ import Groupspace from "../temp/groupView";
 import ProtectedRoute from "./ProtectedRoute"; // Import the protected route
 import "./App.css";
 import OAuthSuccess from "../temp/hack";
-
+import Otpverification from "./components/auth/Otpverification.jsx";
 const App = () => {
   return (
     <BrowserRouter>
       <div className="App">
         <Routes>
           <Route path="/" element={<Login />} />
+          <Route path="/oauth-success/:token" element={<OAuthSuccess />} />
+          <Route path="/verify-otp/:id" element={<Otpverification />} />
           <Route
-            path="/phase2"
+            path="/taskManager"
             element={
               <ProtectedRoute>
-                <Diskspace />
+                <NavBar />
               </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/oauth-success"
-            element={
-              <OAuthSuccess />
             }
           />
           <Route
@@ -37,10 +33,10 @@ const App = () => {
             }
           />
           <Route
-            path="/taskManager"
+            path="/phase2/:id"
             element={
               <ProtectedRoute>
-                <NavBar />
+                <Diskspace />
               </ProtectedRoute>
             }
           />

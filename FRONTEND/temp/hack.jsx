@@ -1,27 +1,43 @@
 import { useEffect } from "react";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
-export default function OAuthSuccess() {
-    const navigate = useNavigate();
-    useEffect(() => {
-        async function fetchToken() {
-            try {
-                const res = await axios.get("http://localhost:2144/api/stateless-oauth/token", { withCredentials: true });
-                console.log("Access token:", res.data.access_token);
-                localStorage.setItem("token", res.data.access_token)
-                if (res.data.access_token) {
-                    navigate("/taskManager");
-                }
-                else {
-                    console.log("not working");
+import { useNavigate, useParams } from "react-router-dom";
+import { authService } from "../src/services/api";
 
-                }
-            } catch (err) {
-                console.error(err.response?.data || err);
-            }
-        }
-        fetchToken();
-    }, []);
+function OAuthSuccess() {
+  const navigate = useNavigate();
+  const { token } = useParams();
 
-    return <h1>OAuth Success! Fetching token...</h1>;
+  useEffect(() => {
+    const handleOAuth = async () => {
+      try {
+        localStorage.setItem("token", token);
+        console.log("Token stored:", token);
+
+        const res = await authService.OauthCreation(token);
+        console.log("comes back");
+        console.log(res);
+        console.log("printing completed");
+        const id = res.data.data.id;
+        console.log(id);
+        localStorage.removeItem("token");
+        localStorage.setItem("token", res.data.data.token);
+        // navigate(`/phase2/${id}`);
+        navigate(`/taskManager`);
+      } catch (err) {
+        console.error("OAuth error:", err);
+      }
+    };
+
+    if (token) {
+      handleOAuth();
+    }
+  }, [token, navigate]);
+
+  return (
+    <div style={{ textAlign: "center", marginTop: "50px" }}>
+      <h2>Authentication Successful!</h2>
+      <p>Redirecting...</p>
+    </div>
+  );
 }
+
+export default OAuthSuccess;
