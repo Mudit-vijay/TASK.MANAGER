@@ -41,7 +41,7 @@ const App = () => {
               </ProtectedRoute>
             }
           />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* <Route path="*" element={<Navigate to="/" replace />} /> */}
         </Routes>
       </div>
     </BrowserRouter>
@@ -49,4 +49,5 @@ const App = () => {
 };
 
 export default App;
+
 
