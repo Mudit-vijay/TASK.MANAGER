@@ -1,94 +1,160 @@
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from "react";
 import { groupService, taskSERVICES } from "../../services/api";
-// import { useDispatch, useSelector } from "react-redux";
+import axios from "axios";
 
 const TaskManager = () => {
   const [newTaskName, setNewTaskName] = useState({});
   const [group, setGroup] = useState([]);
   const [newGroupName, setNewGroupName] = useState("");
-  const [task, setAllTask] = useState([]);
-  // const token = localStorage.getItem("token");
+  const [state, setState] = useState(false);
+  const [groupUpdateInputs, setGroupUpdateInputs] = useState({});
+  const [taskUpdateInputs, setTaskUpdateInputs] = useState({});
 
-  useEffect(() => {
-    const getallgroups = async () => {
-      try {
-        const result = await groupService.getGroups();
+  // Query to fetch existing workspace data
+  //   const query = `
+  //   query GetAllWorkspaces($id: ID, $email: String) {
+  //     allWorkspaces(id: $id, email: $email) {
+  //       id
+  //       name
+  //       creatorName
+  //       role
+  //       users
+  //       mail
+  //     }
+  //   }
+  // `;
+  const query = `
+  mutation {
+    createWorkspace(
+      name: "My Workspace",
+      creatorName: "John Doe",
+      role: ADMIN,
+      users: ["user1@example.com", "user2@example.com"],
+      mail: ["mailx@example.com", ]
+    ) {
+      id
+      name
+      creatorName
+      role
+      users
+      mail
+    }
+  }
+`;
 
-        setGroup(result);
-      } catch (err) {
-        console.log("Error fetching groups:", err);
-      }
-    };
-    getallgroups(); // only call if token exists
-  }, []);
+  // useEffect(() => {
+  //   const createWorkspace = async () => {
+  //     try {
+  //       const response = await axios.post(
+  //         "http://localhost:9999/graphql",
+  //         { query },  // send query as { query: "..." }
+  //         {
+  //           withCredentials: true,
+  //           headers: { 'Content-Type': 'application/json' }
+  //         }
+  //       );
 
-  const groupitems = [];
+  //       console.log("Response:", response.data);
+  //     } catch (err) {
+  //       console.error("Error creating workspace:", err);
+  //     }
+  //   };
 
-  const getALLTASK = async (id) => {
-    return await taskSERVICES.getALLTASKS(id);
+  //   createWorkspace();
+  // }, []);
+
+  const variables = {
+    id: "25", // Fetch workspace with ID 1
+    email: "user1@example.com", // No email filter
   };
 
   useEffect(() => {
-    const buildGroupItems = async () => {
-      for (let i = 0; i < group.length; i++) {
-        const response = getALLTASK(group[i]._id);
-
-        setAllTask((prev) => [...prev, response]);
-        groupitems[i] = [];
-        for (let j = 0; j < task.length; j++) {
-          groupitems[i].push(
-            <li
-              key={task[j]._id}
-              className="flex items-center justify-between p-2 bg-gray-800 rounded-md mb-2 hover:bg-gray-700 transition"
-            >
-              <span className="text-gray-200">{task[j].name}</span>
-              <button
-                onClick={() => handledelete(task[j]._id)}
-                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm"
-              >
-                Delete
-              </button>
-            </li>
-          );
+    const fetchWorkspace = async () => {
+      try {
+        const response = await axios.post(
+          "http://localhost:9999/graphql",
+          {
+            query: `
+      query GetAllWorkspaces($id: ID, $email: String) {
+        allWorkspaces(id: $id, email: $email) {
+          id
+          name
+          creatorName
+          role
+          users
+          mail
         }
       }
+    `,
+            variables: variables,
+          },
+          {
+            withCredentials: true, // important if your backend requires cookies
+          }
+        );
+        console.log("second query");
+        console.log("second response", response.data);
+      } catch (err) {
+        console.error("Error fetching workspace:", err);
+      }
     };
-    buildGroupItems();
-  }, [setGroup]);
 
-  const creategroup = async (a, val) => {
+    fetchWorkspace();
+  }, []);
+
+  useEffect(() => {
+    const getAllGroups = async () => {
+      try {
+        const result = await groupService.getGroups();
+        setGroup(result);
+      } catch (err) {
+        console.error("Error fetching groups:", err);
+      }
+    };
+    getAllGroups();
+  }, [state]);
+
+  const handleDeleteGroup = async (id) => {
+    await groupService.deleteGroup(id);
+    setState(!state);
+  };
+
+  const handleUpdateGroup = async (id, body) => {
     try {
-      const response = await groupService.createGroups(a, val);
-      //response.group.name
-      setGroup(() => [response]);
+      await groupService.updateGroup(id, body);
+      setState(!state);
     } catch (err) {
-      console.log(err);
+      alert("group is allready exist with that name");
+      console.error(err);
     }
   };
 
-  const handledelete = async (id) => {
-    await groupService.deleteGroup(id);
-    setGroup((prev) => prev.filter((group) => group._id != id));
+  const createGroup = async (name, val) => {
+    try {
+      const response = await groupService.createGroups(name, val);
+      setGroup([response]);
+      setState(!state);
+    } catch (response) {
+      console.log(response);
+      alert("group is allready exist with that name");
+    }
   };
 
-  // const { loading, error } = useTasks();
+  const handleCreateTask = async (groupID, name) => {
+    await taskSERVICES.createTASK(groupID, name);
+    setState(!state);
+  };
 
-  // if (loading) {
-  //   return (
-  //     <div className="flex justify-center items-center h-64 text-gray-300">
-  //       <div className="text-xl animate-pulse">Loading tasks...</div>
-  //     </div>
-  //   );
-  // }
+  const handleDeleteTask = async (groupId, taskId) => {
+    await taskSERVICES.deleteTASK(groupId, taskId);
+    setState(!state);
+  };
 
-  // if (error) {
-  //   return (
-  //     <div className="flex justify-center items-center h-64 text-red-400">
-  //       <div className="text-xl">Error: {error}</div>
-  //     </div>
-  //   );
-  // }
+  const handleUpdateTask = async (groupId, taskId, data) => {
+    await taskSERVICES.updateTASK(groupId, taskId, data);
+    setState(!state);
+  };
 
   const newArr = group?.data?.map((item) => item);
 
