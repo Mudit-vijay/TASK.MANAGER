@@ -14,8 +14,8 @@ const App = () => {
       <div className="App">
         <Routes>
           <Route path="/" element={<Login />} />
-          {/* <Route path="/oauth-success/:token" element={<OAuthSuccess />} /> */}
-          <Route path="/oauth-success" element={<OAuthSuccess />} />
+           <Route path="/oauth-success/:token" element={<OAuthSuccess />} /> 
+          {/* <Route path="/oauth-success" element={<OAuthSuccess />} /> */}
           <Route path="/verify-otp/:id" element={<Otpverification />} />
           <Route
             path="/taskManager"
@@ -49,3 +49,4 @@ const App = () => {
 };
 
 export default App;
+
