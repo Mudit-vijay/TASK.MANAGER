@@ -20,6 +20,37 @@ function generateOTP(length = 6) {
     }
     return otp;
 }
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+
+async function sendEmail(receiveremail, otp) {
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+            "accept": "application/json",
+            "api-key": BREVO_API_KEY,
+            "content-type": "application/json"
+        },
+        body: JSON.stringify({
+            sender: {
+                name: "My App",
+                email: "your_verified_email@gmail.com"
+            },
+            to: [
+                {
+                    email: receiveremail,
+                }
+            ],
+            subject: "OTP VERIFICATION",
+            htmlContent: `<h2>herer is your api for email verification${otp} </h2>`
+        })
+    });
+
+    const data = await response.json();
+    console.log(data);
+}
+
+
+
 
 // --------------------
 // Login Controller
@@ -48,21 +79,7 @@ const login = async (req, res) => {
         );
 
         // Generate OTP
-
-
-        // Send OTP via SendGrid
-        console.log("logging something")
-        console.log(user.email)
-        const msg = {
-            to: user.email,
-            from: process.env.SENDGRID_VERIFIED_EMAIL, // Must be a verified sender in SendGrid
-            subject: "Email Verification OTP",
-            text: `Here is your OTP for login verification: ${otp}`,
-            html: `<strong>Here is your OTP for login verification: ${otp}</strong>`,
-        };
-        sgMail.send(msg)
-            .then(() => console.log('Test email sent successfully!'))
-            .catch(err => console.error('Error sending email:', err.response.body));
+        // await sendEmail(user.email, otp);
         // Set token in cookie
         res.cookie('token', token, {
             httpOnly: true,
@@ -91,19 +108,19 @@ const login = async (req, res) => {
 const createUser = async (req, res) => {
     try {
         const { name, email, password } = req.body;
-        if (!name || !email || !password ) {
+        if (!name || !email || !password) {
             return res.status(400).json({ message: "Name, email, role, and password are required" });
         }
 
         const hashedPassword = bcrypt.hashSync(password, 10);
         const otp = generateOTP();
         otpStore.set(email, otp);
-        const role="USER";
+        const role = "USER";
         const user = await loginSchema.create({
             name,
             email,
             password: hashedPassword,
-            role:role
+            role: role
         });
 
         const token = jwt.sign(
@@ -114,21 +131,7 @@ const createUser = async (req, res) => {
 
         // Generate OTP
         console.log(otp);
-
-        // Send OTP via SendGrid
-        console.log("logging something")
-        console.log(user.email)
-        const msg = {
-            to: user.email,
-            from: process.env.SENDGRID_VERIFIED_EMAIL, // Verified sender
-            subject: "Email Verification OTP",
-            text: `Here is your OTP for account verification: ${otp}`,
-            html: `<strong>Here is your OTP for account verification: ${otp}</strong>`,
-        };
-
-        await sgMail.send(msg, () => {
-            console.log("message send successfull")
-        });
+        // await sendEmail(user.email, otp); 
 
         res.cookie("token", token, {
             httpOnly: true,
