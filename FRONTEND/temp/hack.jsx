@@ -15,7 +15,7 @@ function OAuthSuccess() {
         localStorage.setItem("token", token);
         console.log("Token stored:", token);
 
-        const res = await authService.OauthCreation(token);
+        const res = await authService.OauthCreation();
         console.log("Backend response:", res);
 
         const id = res.data.data.id;
