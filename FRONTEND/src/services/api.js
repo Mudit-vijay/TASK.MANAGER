@@ -38,14 +38,12 @@ export const authService = {
         const response = await authApi.post('/createUser', userData);
         return response.data;
     },
-    OauthCreation: async () => {
-        // console.log("request comes here");
-
-        // console.log(localStorage.getItem("tokenOauth"));
-
+    OauthCreation: async (token) => {
+        console.log("token", token)
+        console.log("request comes here");
         const response = await authApi.post('/oauthcreation', {
             headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
+                Authorization: `Bearer ${token}`,
             },
         });
         // console.log("printing response");
