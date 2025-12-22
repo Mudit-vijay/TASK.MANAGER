@@ -1,86 +1,99 @@
-const express = require('express');
 const loginSchema = require('../schemas/customer_Schema.js');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const sgMail = require('@sendgrid/mail');
+const fetch = require('node-fetch');
 require('dotenv').config();
 
-const jwt_S = process.env.JWT;
-// --------------------
-// OTP Store (in-memory)
-const otpStore = new Map(); // key: email, value: otp
+// ======================
+// CONFIG
+// ======================
+const JWT_SECRET = process.env.JWT;
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const VERIFIED_SENDER_EMAIL = process.env.SENDGRID_VERIFIED_EMAIL;
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY); // make sure this is in your .env file
+// ======================
+// OTP STORE (in-memory)
+// email -> { otp, expiresAt }
+// ======================
+const otpStore = new Map();
 
-// Helper function to generate OTP
+// ======================
+// OTP GENERATOR
+// ======================
 function generateOTP(length = 6) {
     let otp = '';
     for (let i = 0; i < length; i++) {
-        otp += Math.floor(Math.random() * 10); // random digit 0-9
+        otp += Math.floor(Math.random() * 10);
     }
     return otp;
 }
-const BREVO_API_KEY = process.env.BREVO_API_KEY;
 
-async function sendEmail(receiveremail, otp) {
+// ======================
+// BREVO EMAIL SENDER
+// ======================
+async function sendEmail(receiverEmail, otp) {
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {
         method: "POST",
         headers: {
-            "accept": "application/json",
+            accept: "application/json",
             "api-key": BREVO_API_KEY,
             "content-type": "application/json"
         },
         body: JSON.stringify({
             sender: {
                 name: "My App",
-                email: "your_verified_email@gmail.com"
+                email: VERIFIED_SENDER_EMAIL // MUST be verified in Brevo
             },
-            to: [
-                {
-                    email: receiveremail,
-                }
-            ],
-            subject: "OTP VERIFICATION",
-            htmlContent: `<h2>herer is your api for email verification${otp} </h2>`
+            to: [{ email: receiverEmail }],
+            subject: "OTP Verification",
+            htmlContent: `
+                <h2>Email Verification</h2>
+                <p>Your OTP is:</p>
+                <h1>${otp}</h1>
+                <p>This OTP is valid for 5 minutes.</p>
+            `
         })
     });
 
     const data = await response.json();
-    console.log(data);
+
+    if (!response.ok) {
+        console.error("Brevo Error:", data);
+        throw new Error("Email sending failed");
+    }
 }
 
-
-
-
-// --------------------
-// Login Controller
+// ======================
+// LOGIN CONTROLLER
+// ======================
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
-        const user = await loginSchema.findOne({ email });
 
+        const user = await loginSchema.findOne({ email });
         if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
+            return res.status(404).json({ message: "User not found" });
         }
-        const otp = generateOTP();
-        otpStore.set(email, otp);
+
         const isPasswordValid = bcrypt.compareSync(password, user.password);
         if (!isPasswordValid) {
             return res.status(400).json({ message: "Invalid password" });
         }
 
+        const otp = generateOTP();
+        otpStore.set(email, {
+            otp,
+            expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
+        });
+
+        await sendEmail(email, otp);
+
         const token = jwt.sign(
             { id: user._id, email: user.email, role: user.role },
-            jwt_S,
+            JWT_SECRET,
             { expiresIn: '1h' }
         );
 
-        // Generate OTP
-        // await sendEmail(user.email, otp);
-        // Set token in cookie
         res.cookie('token', token, {
             httpOnly: true,
             secure: true,
@@ -88,52 +101,54 @@ const login = async (req, res) => {
             maxAge: 24 * 60 * 60 * 1000,
         });
 
-        // Return OTP and user info (for frontend verification)
         return res.json({
             _id: user._id,
-            token: token,
+            token,
             name: user.name,
-            email: user.email,
-            // OTP: otp
+            email: user.email
         });
 
     } catch (err) {
-        console.log(`Login error: ${err.message}`);
+        console.error("Login error:", err.message);
         return res.status(500).json({ message: "Something went wrong" });
     }
 };
 
-// --------------------
-// Create User Controller
+// ======================
+// CREATE USER CONTROLLER
+// ======================
 const createUser = async (req, res) => {
     try {
         const { name, email, password } = req.body;
+
         if (!name || !email || !password) {
-            return res.status(400).json({ message: "Name, email, role, and password are required" });
+            return res.status(400).json({ message: "All fields are required" });
         }
 
         const hashedPassword = bcrypt.hashSync(password, 10);
-        const otp = generateOTP();
-        otpStore.set(email, otp);
-        const role = "USER";
+
         const user = await loginSchema.create({
             name,
             email,
             password: hashedPassword,
-            role: role
+            role: "USER"
         });
+
+        const otp = generateOTP();
+        otpStore.set(email, {
+            otp,
+            expiresAt: Date.now() + 5 * 60 * 1000
+        });
+
+        await sendEmail(email, otp);
 
         const token = jwt.sign(
             { id: user._id },
-            jwt_S,
+            JWT_SECRET,
             { expiresIn: '1h' }
         );
 
-        // Generate OTP
-        console.log(otp);
-        // await sendEmail(user.email, otp); 
-
-        res.cookie("token", token, {
+        res.cookie('token', token, {
             httpOnly: true,
             secure: true,
             sameSite: 'LAX',
@@ -141,127 +156,57 @@ const createUser = async (req, res) => {
         });
 
         return res.status(201).json({
-            token: token,
-            id: user._id,
             success: true,
-            message: "User created successfully",
-            // OTP: otp
+            token,
+            id: user._id,
+            message: "User created successfully"
         });
 
     } catch (err) {
-        console.log(`Error in creating user: ${err.message}`);
+        console.error("Create user error:", err.message);
+
         if (err.code === 11000) {
-            return res.status(400).json({ message: "User already exists with this email" });
+            return res.status(400).json({ message: "Email already exists" });
         }
-        return res.status(500).json({ success: false, message: err.message });
+
+        return res.status(500).json({ message: "Server error" });
     }
 };
-// --------------------
-// OAUTH Create User Controller
-function generatePassword(length = 8) {
-    const chars =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+";
-    let password = "";
 
-    for (let i = 0; i < length; i++) {
-        const randomIndex = Math.floor(Math.random() * chars.length);
-        password += chars[randomIndex];
-    }
-
-    return password;
-}
-const OauthCreation = async (req, res) => {
-    console.log("request comes here");
-
-    const authHeader = req.headers['Authorization'] || req.get('Authorization');
-    const token = authHeader.split(" ")[1];
-    console.log("Access Token:", token);
-
-    try {
-        // Use access token to get user info from Google API
-        const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        const userInfo = await response.json();
-        console.log("User Info:", userInfo);
-        const email = userInfo.email;
-        const a = generatePassword();
-        const name = userInfo.name
-        const role = "USER"
-        const loggedin_user = await loginSchema.findOne({ email });
-        if (loggedin_user) {
-
-            const token = jwt.sign(
-                { id: loggedin_user._id, email: loggedin_user.email, role: loggedin_user.role },
-                jwt_S,
-                { expiresIn: '1h' }
-            );
-            res.cookie('token', token, {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'LAX',
-                maxAge: 24 * 60 * 60 * 1000,
-            });
-
-            // Return OTP and user info (for frontend verification)
-            return res.json({
-                _id: loggedin_user._id,
-                token: token,
-                name: loggedin_user.name,
-                email: loggedin_user.email,
-                // OTP: otp
-            });
-        }
-        const user = await loginSchema.create({
-            name,
-            email,
-            password: a,
-            role
-        })
-        console.log("logging out user");
-
-        console.log(user);
-
-        const tokenn = jwt.sign(
-            { id: user._id },
-            jwt_S,
-            { expiresIn: '12h' }
-        );
-        console.log("printing out id");
-
-        console.log(user._id);
-
-        return res.status(201).json({
-            token: tokenn,
-            id: user._id,
-            success: true,
-            message: "User created successfully",
-            // OTP: otp
-        });
-
-    } catch (error) {
-        console.error("Error fetching user info:", error);
-        res.status(401).json({ error: "Invalid token" });
-    }
-};
+// ======================
+// OTP VERIFICATION
+// ======================
 const otpVerification = async (req, res) => {
     try {
-        console.log("otp request");
-        const opt = req.body.data.otp
-        const email = req.body.data.email
-        const otp = otpStore.get(email);
-        if (otp == opt) {
-            console.log("succeed");
-            return res.status(200).json({ msg: true })
+        const { otp, email } = req.body.data;
+
+        const record = otpStore.get(email);
+        if (!record) {
+            return res.status(400).json({ msg: "OTP expired or invalid" });
         }
-    }
-    catch (err) {
-        return res.status(401).json({ msg: true })
-    }
-}
-module.exports = { login, createUser, OauthCreation, otpVerification };
 
+        if (Date.now() > record.expiresAt) {
+            otpStore.delete(email);
+            return res.status(400).json({ msg: "OTP expired" });
+        }
 
+        if (record.otp !== otp) {
+            return res.status(400).json({ msg: "Invalid OTP" });
+        }
+
+        otpStore.delete(email); // one-time use
+        return res.status(200).json({ msg: true });
+
+    } catch (err) {
+        return res.status(500).json({ msg: "OTP verification failed" });
+    }
+};
+
+// ======================
+// EXPORTS
+// ======================
+module.exports = {
+    login,
+    createUser,
+    otpVerification
+};
