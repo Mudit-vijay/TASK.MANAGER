@@ -62,7 +62,8 @@ app.post('/group/create', async (req, res) => {
 app.put('/group/:groupId/update', async (req, res) => {
     console.log("update a groups1");
     const { groupId } = req.params;
-    const authHeader = req.headers['Authorization']
+    // const authHeader = req.headers['Authorization']
+    const authHeader = req.headers['authorization']
     const token = authHeader.split(" ")[1];
     console.log(token)
     console.log("update a groups2");
@@ -97,6 +98,7 @@ app.delete('/group/:groupId', async (req, res) => {
     }
 });
 module.exports = app; // <-- export router
+
 
 
 
