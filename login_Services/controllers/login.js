@@ -21,37 +21,6 @@ function generateOTP(length = 6) {
     }
     return otp;
 }
-const BREVO_API_KEY = process.env.BREVO_API_KEY;
-
-async function sendEmail(receiveremail, otp) {
-    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-        method: "POST",
-        headers: {
-            "accept": "application/json",
-            "api-key": BREVO_API_KEY,
-            "content-type": "application/json"
-        },
-        body: JSON.stringify({
-            sender: {
-                name: "My App",
-                email: "your_verified_email@gmail.com"
-            },
-            to: [
-                {
-                    email: receiveremail,
-                }
-            ],
-            subject: "OTP VERIFICATION",
-            htmlContent: `<h2>herer is your api for email verification${otp} </h2>`
-        })
-    });
-
-    const data = await response.json();
-    console.log(data);
-}
-
-
-
 
 // --------------------
 // Brevo Mail Sender (FIXED)
@@ -117,14 +86,8 @@ const login = async (req, res) => {
             { expiresIn: '1h' }
         );
 
-<<<<<<< HEAD
-        // Generate OTP
-        await sendEmail(user.email, otp);
-        // Set token in cookie
-=======
         await sendEmail(user.email, otp); // still optional as per your logic
 
->>>>>>> 6df8148eddc1f267ca638579f23219ba550508f6
         res.cookie('token', token, {
             httpOnly: true,
             secure: true,
@@ -150,10 +113,7 @@ const login = async (req, res) => {
 const createUser = async (req, res) => {
     try {
         const { name, email, password } = req.body;
-<<<<<<< HEAD
-=======
 
->>>>>>> 6df8148eddc1f267ca638579f23219ba550508f6
         if (!name || !email || !password) {
             return res.status(400).json({ message: "Name, email, role, and password are required" });
         }
@@ -161,20 +121,13 @@ const createUser = async (req, res) => {
         const hashedPassword = bcrypt.hashSync(password, 10);
         const otp = generateOTP();
         otpStore.set(email, otp);
-<<<<<<< HEAD
-=======
 
->>>>>>> 6df8148eddc1f267ca638579f23219ba550508f6
         const role = "USER";
         const user = await loginSchema.create({
             name,
             email,
             password: hashedPassword,
-<<<<<<< HEAD
-            role: role
-=======
             role
->>>>>>> 6df8148eddc1f267ca638579f23219ba550508f6
         });
 
         const token = jwt.sign(
@@ -183,13 +136,7 @@ const createUser = async (req, res) => {
             { expiresIn: '1h' }
         );
 
-<<<<<<< HEAD
-        // Generate OTP
-        console.log(otp);
-        await sendEmail(user.email, otp); 
-=======
         await sendEmail(user.email, otp); // still optional
->>>>>>> 6df8148eddc1f267ca638579f23219ba550508f6
 
         res.cookie("token", token, {
             httpOnly: true,
