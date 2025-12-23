@@ -35,7 +35,7 @@ const LoginSignup = () => {
       dispatch(setEmail(result.data.email));
       dispatch(setUserId(result._id));
       // dispatch(setOtp(otp));
-      navigate(`/verify-otp/:${result.id}`);
+      navigate(`/verify-otp/${result.id}`);
     } catch (err) {
       console.error("Login error:", err);
       alert("Login failed. Please check your credentials.");
@@ -62,7 +62,7 @@ const LoginSignup = () => {
       dispatch(setOtp(otpp));
       dispatch(setUserId(result.id));
       localStorage.setItem("token", result.token);
-      navigate(`/verify-otp/:${result.id}`);
+      navigate(`/verify-otp/${result.id}`);
     } catch (err) {
       console.log(err);
       console.error("Signup error:", err);
