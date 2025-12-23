@@ -45,7 +45,7 @@ app.post('/oauthcreation', async (req, res) => {
 
     try {
         // Extract token from request headers
-        const header = req.headers["Authorization"];
+        const header = req.headers["authorization"];
         console.log(req.headers);
         console.log(header);
         if (!header) {

@@ -41,7 +41,7 @@ export const authService = {
     OauthCreation: async (token) => {
         console.log("token", token)
         console.log("request comes here");
-        const response = await authApi.post('/oauthcreation', {
+        const response = await authApi.post('/oauthcreation', {},{
             headers: {
                 Authorization: `Bearer ${token}`,
             },
