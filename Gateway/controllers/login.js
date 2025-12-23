@@ -45,7 +45,8 @@ app.post('/oauthcreation', async (req, res) => {
 
     try {
         // Extract token from request headers
-        const header = req.headers["authorization"];
+        const header = req.headers["Authorization"];
+        console.log(req.headers);
         console.log(header);
         if (!header) {
             return res.status(401).json({ message: "No token provided" });
