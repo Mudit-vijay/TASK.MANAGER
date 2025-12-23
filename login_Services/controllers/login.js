@@ -177,9 +177,10 @@ function generatePassword(length = 8) {
 }
 
 const OauthCreation = async (req, res) => {
-    console.log("request comes here");
+    console.log("request comes in backend");
 
-    const authHeader = req.headers['Authorization'] || req.get('Authorization');
+    const authHeader = req.headers['authorization'] || req.get('authorization');
+    console.log(authHeader);
     const token = authHeader.split(" ")[1];
 
     try {
