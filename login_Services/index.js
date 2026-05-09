@@ -19,12 +19,14 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
     origin: [
+        "https://task-manager-1-5jlg.onrender.com",
         "https://task-manager-xp1g.onrender.com",
         "https://backend-a-tvul.onrender.com",
-        "http://localhost:5173",
-        "http://localhost:8080",
         "https://backend-b-wxdw.onrender.com",
-        "https://task-manager-1-5jlg.onrender.com"
+        "https://algorithm-scheduler.onrender.com",
+        "https://oauth-service-fyrc.onrender.com",
+        "http://localhost:5173",
+        "http://localhost:8080"
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
