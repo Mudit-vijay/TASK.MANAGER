@@ -18,12 +18,14 @@ app.use(compression());
 app.use(
     cors({
         origin: [
+            "https://task-manager-1-5jlg.onrender.com",
             "https://task-manager-xp1g.onrender.com",
-            "http://localhost:8080",
-            "http://localhost:5173",
             "https://backend-a-tvul.onrender.com",
             "https://backend-b-wxdw.onrender.com",
-            "https://task-manager-1-5jlg.onrender.com"
+            "https://algorithm-scheduler.onrender.com",
+            "https://oauth-service-fyrc.onrender.com",
+            "http://localhost:8080",
+            "http://localhost:5173"
         ],
         credentials: true,
     })
