@@ -4,10 +4,11 @@ import { authService } from "../src/services/api";
 
 function OAuthSuccess() {
   const navigate = useNavigate();
-  const { token } = useParams();
-
+  const { token } = useParams(); // Read from path parameter instead
+  
   useEffect(() => {
     const handleOAuth = async () => {
+      if (!token) return;
       try {
         localStorage.setItem("token", token);
 
@@ -20,12 +21,9 @@ function OAuthSuccess() {
         navigate('/login');
       }
     };
-
-    if (token) {
-      handleOAuth();
-    }
+    handleOAuth();
   }, [token, navigate]);
-
+  
   return (
     <div style={{ textAlign: "center", marginTop: "50px" }}>
       <h2>Authentication Successful!</h2>

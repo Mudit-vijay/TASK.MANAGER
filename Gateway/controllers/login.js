@@ -4,7 +4,10 @@ const api = require('../api.js');
 const app = express.Router();  // <-- use router, not app
 const { proxy } = require('../utils/proxy.js')
 app.use(express.json());
-
+app.use((req, res, next) => {
+    console.log(`[HIT] ${req.method} ${req.originalUrl} at ${Date.now()}`);
+    next();
+});
 app.post('/login', async (req, res) => {
     proxy(req, res, '/login', api.authapi);
 });
