@@ -2,24 +2,27 @@ import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 import { authService } from "../../services/api";
-
+import { useDispatch } from "react-redux";
+import { setName } from "../../../features/auth/auth-slice";
+import { setUserId } from "../../../features/userID/userId-slics";
 const OtpVerification = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   // const otp = useSelector((state) => state.otp.otp);
   const email = useSelector((state) => state.auth.email);
   const [OTP, setOTP] = useState(""); // user input
   const id = useSelector((sate) => sate);
   const verifyOTP = async () => {
-    console.log("logging out one time password");
-    console.log(OTP);
-    console.log(email);
 
     const res = await authService.otpVerification(OTP, email);
-    console.log(res);
+    const data = res.data;
+    dispatch(setName(data.data.name));
+    dispatch(setUserId(data.data._id));
 
-    if (res.data.data.msg == true) {
-      // navigate(`/phase2/"${id}`);
-      navigate("/taskManager")
+    if (data.msg == "OTP Verification Successfull") {
+      if (res.status === 200) {
+      navigate("/taskManager");
+    }
     } else {
       return (
         <>

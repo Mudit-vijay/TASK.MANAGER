@@ -15,21 +15,17 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/oauth-success/:token" element={<OAuthSuccess />} />
-          <Route path="/verify-otp/:id" element={<Otpverification />} />
+          <Route path="/verifyotp" element={<Otpverification />} />
           <Route
             path="/taskManager"
             element={
-              <ProtectedRoute>
                 <NavBar />
-              </ProtectedRoute>
             }
           />
           <Route
             path="/group/:id"
             element={
-              <ProtectedRoute>
                 <Groupspace />
-              </ProtectedRoute>
             }
           />
           <Route
