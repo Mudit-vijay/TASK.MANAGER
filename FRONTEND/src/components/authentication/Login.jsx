@@ -29,7 +29,7 @@ const LoginSignup = () => {
       dispatch(setEmail(email));
       dispatch(setName(res.data.name));
       dispatch(setUserId(res.data._id));
-      navigate(`/phase2/${res.data._id}`) 
+      navigate(`/taskManager`);
     } catch (err) {
       alert("Login failed. Please check your credentials or try again after some time.");
     } finally {
@@ -56,7 +56,7 @@ const LoginSignup = () => {
         dispatch(setUserId(res._id));
         navigate(`/phase2/${res._id}`);
       } else {
-        navigate(`/verifyotp`);
+        navigate(`/verify-otp/${res._id || 'verify'}`);
       }
     } catch (err) {
       alert("Failed to create user. Please try again.");

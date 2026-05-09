@@ -1,10 +1,12 @@
 import axios from 'axios';
 
+const GATEWAY = import.meta.env.VITE_API_URL || 'https://task-manager-xp1g.onrender.com/api/v1';
+
 const BASE_URLS = {
-    AUTH: 'http://localhost:8080/api/v1',
-    TASKS: 'http://localhost:8080/api/v1',
-    GROUPS: 'http://localhost:8080/api/v1',
-    SCHEDULER: 'http://localhost:8080/api/v1/scheduler'
+    AUTH: GATEWAY,
+    TASKS: GATEWAY,
+    GROUPS: GATEWAY,
+    SCHEDULER: `${GATEWAY}/scheduler`
 };
 
 const createApiInstance = (baseURL) => {
