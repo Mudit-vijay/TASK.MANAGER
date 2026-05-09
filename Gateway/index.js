@@ -11,8 +11,12 @@ app.use(compression());
 
 app.use(cors({
     origin: [
+        "https://task-manager-1-5jlg.onrender.com",
         "https://task-manager-xp1g.onrender.com",
         "https://backend-a-tvul.onrender.com",
+        "https://backend-b-wxdw.onrender.com",
+        "https://algorithm-scheduler.onrender.com",
+        "https://oauth-service-fyrc.onrender.com",
         "http://localhost:5173",
         "http://localhost:8080"
     ],
@@ -21,34 +25,34 @@ app.use(cors({
 
 // Proxy for Authentication Service
 const authProxy = createProxyMiddleware({
-    target: 'http://localhost:4282',
+    target: process.env.LOGIN_SERVICE_URL || 'https://backend-b-wxdw.onrender.com',
     changeOrigin: true,
     pathFilter: ['/api/v1/login', '/api/v1/createUser', '/api/v1/oauthcreation', '/api/v1/otpverification', '/api/v1/admin/users'],
     on: {
         error: (err, req, res) => {
             console.error('Auth Proxy Error:', err.message);
-            res.status(502).send('Auth Service (port 4282) is unreachable');
+            res.status(502).send('Auth Service is unreachable');
         }
     }
 });
 
 // Proxy for Task and Group Service
 const taskGroupProxy = createProxyMiddleware({
-    target: 'http://localhost:9000',
+    target: process.env.STARTER_SERVICE_URL || 'https://backend-a-tvul.onrender.com',
     changeOrigin: true,
     pathFilter: ['/api/v1/task', '/api/v1/group', '/api/v1/groups'],
 });
 
 // Proxy for Algorithm Scheduler Service
 const schedulerProxy = createProxyMiddleware({
-    target: 'https://algorithm-scheduler.onrender.com',
+    target: process.env.SCHEDULER_SERVICE_URL || 'https://algorithm-scheduler.onrender.com',
     changeOrigin: true,
     pathFilter: ['/api/v1/scheduler'],
 });
 
 // Proxy for OAuth Service
 const oauthProxy = createProxyMiddleware({
-    target: 'http://localhost:9999',
+    target: process.env.OAUTH_SERVICE_URL || 'https://oauth-service-fyrc.onrender.com',
     changeOrigin: true,
     pathFilter: ['/api/v1/oauth'],
 });
