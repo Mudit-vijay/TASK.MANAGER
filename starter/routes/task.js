@@ -3,10 +3,20 @@ import {
     getAllTaskks,
     createtask,
     updatetask,
-    deletetask
+    deletetask,
+    getAllTasksAdmin,
+    deleteTaskAdmin
 } from "../controlers_Task/tasks.js";
+import checkAdmin from "../middlewares/checkAdmin.js";
 
 const router = express.Router();
+
+// ✅ Admin Routes
+router.route('/admin/all')
+    .get(checkAdmin, getAllTasksAdmin);
+
+router.route('/admin/:taskId')
+    .delete(checkAdmin, deleteTaskAdmin);
 
 // ✅ Requires groupId param
 router.route('/:groupId/tasks')

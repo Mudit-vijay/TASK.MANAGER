@@ -30,3 +30,23 @@ const groupapi = createAPIinstance(BASEURLS.base3);
 module.exports = { authapi, taskapi, groupapi };
 
 
+// Somewhere you likely have something like:
+
+// // api.js
+// const axios = require('axios');
+
+// const authapi = axios.create({
+//   baseURL: 'http://auth-service:8080',
+//   timeout: 5000
+// });
+
+// module.exports = { authapi };
+
+
+// So this call is equivalent to:
+
+// axios({
+//   method: 'POST',
+//   url: 'http://auth-service:8080/login',
+//   data: req.body
+// });

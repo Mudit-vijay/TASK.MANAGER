@@ -5,14 +5,9 @@ import { authService } from "../../services/api";
 import { Formik, Form, Field } from "formik";
 import { useDispatch } from "react-redux";
 import { setName, setEmail } from "../../../features/auth/auth-slice";
-import { setOtp } from "../../../features/auth/authsliceii";
-// import { setToken } from "../../../features/token-slice.jsx";
 import { setUserId } from "../../../features/userID/userId-slics";
-import { useEffect } from "react";
-import axios from "axios";
 
 const LoginSignup = () => {
-  console.log("editing to check");
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
@@ -25,20 +20,18 @@ const LoginSignup = () => {
       alert("Please fill in all login fields");
       return;
     }
-    setIsLoading(true);
+    setIsLoadingg(true);
     try {
-      const result = await authService.login(values, { withCredentials: true });
-      const user = result;
-      // const otp = result.OTP;
-      localStorage.setItem("token", result.data.token);
-      dispatch(setName(result.data.name));
-      dispatch(setEmail(result.data.email));
-      dispatch(setUserId(result._id));
-      // dispatch(setOtp(otp));
-      navigate(`/verify-otp/${result.id}`);
+      const res = await authService.login(values.email, values.password);
+      if (res.data.token) {
+        localStorage.setItem("token", res.data.token);
+      }
+      dispatch(setEmail(email));
+      dispatch(setName(res.data.name));
+      dispatch(setUserId(res.data._id));
+      navigate(`/phase2/${res.data._id}`) 
     } catch (err) {
-      console.error("Login error:", err);
-      alert("Login failed. Please check your credentials.");
+      alert("Login failed. Please check your credentials or try again after some time.");
     } finally {
       setIsLoadingg(false);
     }
@@ -55,17 +48,17 @@ const LoginSignup = () => {
     dispatch(setEmail(email));
     setIsLoading(true);
     try {
-      const result = await authService.createUser(values, {
-        withCredentials: true,
-      });
-      const otpp = result.OTP;
-      dispatch(setOtp(otpp));
-      dispatch(setUserId(result.id));
-      localStorage.setItem("token", result.token);
-      navigate(`/verify-otp/${result.id}`);
+      const res = await authService.createUser(values);
+      if (res && res.token) {
+        localStorage.setItem("token", res.token);
+        dispatch(setName(name));
+        dispatch(setEmail(email));
+        dispatch(setUserId(res._id));
+        navigate(`/phase2/${res._id}`);
+      } else {
+        navigate(`/verifyotp`);
+      }
     } catch (err) {
-      console.log(err);
-      console.error("Signup error:", err);
       alert("Failed to create user. Please try again.");
     } finally {
       setIsLoading(false);
@@ -194,7 +187,7 @@ const LoginSignup = () => {
                     isLoading ||
                     !values.name.trim() ||
                     !values.email.trim() ||
-                    !values.password.trim() 
+                    !values.password.trim()
                   }
                 >
                   {isLoading ? "Creating Account..." : "Sign Up"}

@@ -1,5 +1,4 @@
 import React from "react";
-import TaskManager from "../task-manager/TaskManager";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import LogoutIcon from "../../../svg/logout";
@@ -45,7 +44,6 @@ const NavBar = () => {
         </div>
       </header>
       <div className="bg-[#353434] mt-20 justify-start">
-        <TaskManager />
       </div>
     </>
   );

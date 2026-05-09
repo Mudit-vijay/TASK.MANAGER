@@ -20,17 +20,13 @@ const App = () => {
           <Route
             path="/taskManager"
             element={
-              <ProtectedRoute>
                 <NavBar />
-              </ProtectedRoute>
             }
           />
           <Route
             path="/group/:id"
             element={
-              <ProtectedRoute>
                 <Groupspace />
-              </ProtectedRoute>
             }
           />
           <Route

@@ -11,15 +11,14 @@ function OAuthSuccess() {
       if (!token) return;
       try {
         localStorage.setItem("token", token);
-        console.log("Token stored:", token);
 
         const res = await authService.OauthCreation(token);
-        console.log("Backend response:", res);
         const id = res.data.data.id;
+        localStorage.removeItem("token");
         localStorage.setItem("token", res.data.data.token);
-        navigate("/taskManager");
+        navigate(`/taskManager`);
       } catch (err) {
-        console.error("OAuth error:", err);
+        navigate('/login');
       }
     };
     handleOAuth();

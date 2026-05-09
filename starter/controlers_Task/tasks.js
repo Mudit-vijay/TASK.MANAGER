@@ -1,5 +1,6 @@
 import Group from "../models/Group.js";
 import Task from "../models/tasks.js";
+import jwt from "jsonwebtoken";
 
 const getAllTaskks = async (req, res) => {
     const { groupId } = req.params;
@@ -9,7 +10,8 @@ const getAllTaskks = async (req, res) => {
             return res.status(404).json({ msg: `Group not found with id: ${groupId}` });
         }
 
-        const tasks = await Task.find({ _id: { $in: group.tasks } });
+        // Fetch tasks using the foreign key
+        const tasks = await Task.find({ groupId: groupId });
 
         res.status(200).json({ tasks });
     } catch (err) {
@@ -19,25 +21,30 @@ const getAllTaskks = async (req, res) => {
 };
 
 const createtask = async (req, res) => {
-    // console.log("comes here")
     const { groupId } = req.params;
-    // console.log(groupId)
-    const taskd = req.body;
-    // console.log(taskd)
+    const taskData = req.body;
+
+    const token = req.headers['authorization'];
+    if (!token) return res.status(401).json({ msg: "No token provided" });
 
     try {
+        const decoded = jwt.verify(token, process.env.JWT);
+        const user_id = decoded.id;
+
         const group = await Group.findById(groupId);
-        // console.log(group)
         if (!group) {
             return res.status(404).json({ msg: `Group not found with id: ${groupId}` });
         }
 
-        const newTask = await Task.create(taskd);
-        group.tasks.push(newTask._id);
-        await group.save();
-        console.log(group);
+        // Create the task with relations
+        const newTask = await Task.create({
+            ...taskData,
+            groupId: groupId,
+            userId: user_id,
+            userName: taskData.userName || "Unknown User" // Fallback if frontend misses it
+        });
 
-        res.status(200).json({ msg: "Task created successfully", task: newTask });
+        res.status(201).json({ msg: "Task created successfully", task: newTask });
     } catch (err) {
         console.error(err);
         res.status(500).json({ msg: "Internal server error", error: err.message });
@@ -45,12 +52,12 @@ const createtask = async (req, res) => {
 };
 
 const updatetask = async (req, res) => {
-    console.log("requeset received in update task backend")
     const { taskId } = req.params;
-    const updatedData = req.body.a;
+    // Updated data could be the whole body or nested in 'a' based on previous code. Assuming req.body now.
+    const updatedData = req.body; 
 
     try {
-        const updated = await Task.findByIdAndUpdate(taskId, updatedData, { new: true });
+        const updated = await Task.findByIdAndUpdate(taskId, updatedData, { new: true, runValidators: true });
         if (!updated) {
             return res.status(404).json({ msg: `Task not found with id: ${taskId}` });
         }
@@ -62,21 +69,45 @@ const updatetask = async (req, res) => {
 };
 
 const deletetask = async (req, res) => {
-    console.log("delete request comes in backend")
     const { groupId, taskId } = req.params;
-    console.log(groupId, taskId)
+    
     try {
         const group = await Group.findById(groupId);
         if (!group) {
             return res.status(404).json({ msg: "Group not found" });
         }
 
-        group.tasks = group.tasks.filter(id => id.toString() !== taskId);
-        await group.save();
+        const task = await Task.findByIdAndDelete(taskId);
+        if (!task) {
+             return res.status(404).json({ msg: "Task not found" });
+        }
 
-        await Task.findByIdAndDelete(taskId);
         res.status(200).json({ msg: "Task deleted" });
     } catch (err) {
+        res.status(500).json({ msg: "Internal server error", error: err.message });
+    }
+};
+
+const getAllTasksAdmin = async (req, res) => {
+    try {
+        const tasks = await Task.find({}).populate('groupId', 'name');
+        res.status(200).json({ tasks });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ msg: "Internal server error", error: err.message });
+    }
+};
+
+const deleteTaskAdmin = async (req, res) => {
+    const { taskId } = req.params;
+    try {
+        const task = await Task.findByIdAndDelete(taskId);
+        if (!task) {
+            return res.status(404).json({ msg: "Task not found" });
+        }
+        res.status(200).json({ msg: "Task deleted by Admin" });
+    } catch (err) {
+        console.error(err);
         res.status(500).json({ msg: "Internal server error", error: err.message });
     }
 };
@@ -85,5 +116,7 @@ export {
     getAllTaskks,
     createtask,
     updatetask,
-    deletetask
+    deletetask,
+    getAllTasksAdmin,
+    deleteTaskAdmin
 };
