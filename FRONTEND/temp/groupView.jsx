@@ -429,6 +429,25 @@ const GroupsView = () => {
           </div>
         )}
 
+        {/* AI Optimization Loading Modal */}
+        {scheduling && (
+          <div className="fixed inset-0 bg-slate-950/90 backdrop-blur-2xl flex items-center justify-center z-[2000] p-4 animate-in fade-in duration-500">
+            <div className={`${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-white"} border p-16 rounded-[4rem] w-full max-w-lg shadow-2xl text-center relative overflow-hidden`}>
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-indigo-500 animate-pulse"></div>
+              <div className="w-24 h-24 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-10">
+                <Zap className="w-12 h-12 text-indigo-500 animate-bounce" />
+              </div>
+              <h2 className={`text-4xl font-black mb-4 tracking-tighter ${isDarkMode ? "text-white" : "text-slate-900"}`}>Waking AI Engine</h2>
+              <p className="text-slate-500 mb-8 text-lg leading-relaxed">
+                Please wait 2 to 5 minutes while we allocate resources. The optimization engine is spinning up from sleep mode.
+              </p>
+              <div className="w-full flex justify-center">
+                <Activity className="w-8 h-8 text-indigo-500 animate-spin" />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Create Task Modal */}
         {showForm && (
           <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xl flex items-center justify-center z-50 p-6 animate-in fade-in duration-300">
