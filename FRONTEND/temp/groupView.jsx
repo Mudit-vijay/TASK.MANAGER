@@ -28,6 +28,7 @@ import {
   Circle,
   MoreVertical,
   ShieldAlert,
+  Link2,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { groupService, taskSERVICES } from "../src/services/api.js";
@@ -45,6 +46,13 @@ const GroupsView = () => {
   const [success, setSuccess] = useState("");
   const [scheduledTasks, setScheduledTasks] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
+
+  // Dependency picker state
+  const [selectedDeps, setSelectedDeps] = useState([]);
+  const [depSearchQuery, setDepSearchQuery] = useState('');
+  const availableDeps = tasks
+    .filter(t => !selectedDeps.includes(t._id))
+    .filter(t => t.name.toLowerCase().includes(depSearchQuery.toLowerCase()));
   
   // Scheduling Settings
   const [workStart, setWorkStart] = useState("09:00");
@@ -142,11 +150,45 @@ const GroupsView = () => {
     return `${hours < 10 ? '0' : ''}${hours}:${mins < 10 ? '0' : ''}${mins}`;
   };
 
+  /** BFS cycle detection — used when editing tasks with existing deps */
+  const wouldCreateCycle = (taskId, newDepId) => {
+    const visited = new Set();
+    const queue = [newDepId];
+    while (queue.length > 0) {
+      const current = queue.shift();
+      if (current === taskId) return true;
+      if (visited.has(current)) continue;
+      visited.add(current);
+      const t = tasks.find(x => x._id === current);
+      if (t?.dependency) {
+        for (const dep of t.dependency) {
+          queue.push(typeof dep === 'object' ? dep._id : dep);
+        }
+      }
+    }
+    return false;
+  };
+
+  const addDepToSelection = (depId) => {
+    setSelectedDeps(prev => [...prev, depId]);
+    setDepSearchQuery('');
+  };
+
+  const removeDepFromSelection = (depId) => {
+    setSelectedDeps(prev => prev.filter(id => id !== depId));
+  };
+
   const onSubmit = async (data) => {
     try {
-      await taskSERVICES.createTASK(id, { ...data, name: data.name.trim() });
+      await taskSERVICES.createTASK(id, {
+        ...data,
+        name: data.name.trim(),
+        dependency: selectedDeps
+      });
       setShowForm(false);
       reset();
+      setSelectedDeps([]);
+      setDepSearchQuery('');
       fetchTasks();
       setSuccess("Objective Successfully Created.");
       setTimeout(() => setSuccess(""), 3000);
@@ -284,6 +326,12 @@ const GroupsView = () => {
                         <p className={`text-lg font-black ${isDarkMode ? "text-indigo-400" : "text-indigo-600"}`}>{formatTime(st.endTime)}</p>
                     </div>
                   </div>
+                  {st.links && st.links.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-slate-700/50 flex items-center gap-2">
+                      <Lock className="w-3.5 h-3.5 text-amber-500" />
+                      <span className="text-[9px] font-black uppercase tracking-widest text-amber-500">{st.links.length} Prerequisite(s)</span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -331,6 +379,12 @@ const GroupsView = () => {
                     <p className={`text-xs line-clamp-3 leading-relaxed transition-opacity duration-300 group-hover:opacity-100 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
                         {task.description || "No tactical details provided for this objective."}
                     </p>
+                    {task.dependency && task.dependency.length > 0 && (
+                      <div className="flex items-center gap-2 mt-4">
+                        <Lock className="w-3.5 h-3.5 text-amber-500" />
+                        <span className="text-[10px] text-amber-500 font-bold uppercase tracking-widest">Blocked by {task.dependency.length} task(s)</span>
+                      </div>
+                    )}
                 </div>
 
                 <div className={`mt-auto pt-8 border-t relative z-10 flex justify-between items-center ${isDarkMode ? "border-slate-800" : "border-slate-50"}`}>
@@ -410,6 +464,37 @@ const GroupsView = () => {
                   </div>
                   <div className="flex items-end pb-1">
                       <p className="text-[10px] font-bold text-slate-500 leading-tight italic">Precision scheduling requires accurate time estimates.</p>
+                  </div>
+                </div>
+                {/* Dependency Chain Picker */}
+                <div className={`p-6 rounded-[2rem] border ${isDarkMode ? 'bg-slate-900/50 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                  <label className="text-[10px] font-black uppercase text-slate-500 mb-4 flex items-center gap-2"><Link2 className="w-4 h-4" /> Dependency Chain (Prerequisites)</label>
+                  <div className="flex flex-wrap gap-2 mb-4 min-h-[2.5rem]">
+                    {selectedDeps.length === 0 && <span className="text-xs text-slate-500 italic mt-1">No prerequisites. This task can start immediately.</span>}
+                    {selectedDeps.map(depId => {
+                      const depTask = tasks.find(t => t._id === depId);
+                      return (
+                        <span key={depId} className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 rounded-xl text-xs font-bold">
+                          {depTask?.name}
+                          <button type="button" onClick={() => removeDepFromSelection(depId)} className="hover:text-indigo-400 transition-colors"><X className="w-3.5 h-3.5" /></button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <div className="relative">
+                    <input type="text" placeholder="Search tasks to add as dependency..." value={depSearchQuery} onChange={(e) => setDepSearchQuery(e.target.value)} className={`w-full p-4 rounded-xl border font-bold text-xs outline-none focus:border-indigo-500 transition-all ${isDarkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'}`} />
+                    {depSearchQuery && (
+                      <div className={`absolute left-0 right-0 top-full mt-2 rounded-xl border shadow-xl z-50 max-h-48 overflow-y-auto ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                        {availableDeps.length === 0 ? (
+                          <div className="p-4 text-xs text-slate-500 text-center font-bold">No matching tasks found.</div>
+                        ) : availableDeps.map(t => (
+                          <button type="button" key={t._id} onClick={() => addDepToSelection(t._id)} className={`w-full text-left px-4 py-3 text-xs font-bold transition-colors flex items-center justify-between border-b last:border-b-0 ${isDarkMode ? 'border-slate-800 hover:bg-slate-800 text-slate-300' : 'border-slate-100 hover:bg-slate-50 text-slate-700'}`}>
+                            <span>{t.name}</span>
+                            <span className={`text-[9px] uppercase px-2 py-0.5 rounded-md ${t.priority === 'Crucial' ? 'bg-red-500/10 text-red-500' : 'bg-indigo-500/10 text-indigo-500'}`}>{t.priority}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-6 pt-6">

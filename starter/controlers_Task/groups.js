@@ -122,12 +122,45 @@ export const deleteGroupAdmin = async (req, res) => {
     }
 };
 
+/**
+ * Computes a relative deadline (in minutes from "now") for the scheduler.
+ * Ensures a minimum of 100 minutes so the algorithm always has room to schedule.
+ */
+const computeRelativeDeadline = (deadlineDate, nowInMinutes) => {
+    const taskDeadline = deadlineDate
+        ? Math.floor(new Date(deadlineDate).getTime() / 60000)
+        : (nowInMinutes + 1440); // Default: 24 hours from now
+    return Math.max(100, taskDeadline - nowInMinutes);
+};
+
+/**
+ * Maps a single populated Mongoose dependency document to the flat Java TaskModel
+ * shape that the algorithm expects. Only 1 level deep — the algorithm only needs
+ * `dependency.getTaskId()` to compare against its completedTaskIds set.
+ */
+const mapDependencyToJavaModel = (dep, groupId, relativeDeadline) => ({
+    taskId: dep._id.toString(),
+    name: dep.name,
+    description: "",
+    priority: dep.priority || "Medium",
+    estimated_duration: dep.estimated_duration || 30,
+    completed: dep.completed || false,
+    deadline: relativeDeadline,
+    taskDependency: [], // Algorithm only needs 1 level deep
+    userId: 1,
+    userName: "User",
+    groupId: groupId.toString()
+});
+
 export const scheduleGroupTasks = async (req, res) => {
     const { groupId } = req.params;
     
     try {
         console.log(`[Scheduler] Fetching tasks for groupId: ${groupId}`);
-        const tasks = await Task.find({ groupId });
+
+        // Populate dependency so we have the full objects for the Java mapper
+        const tasks = await Task.find({ groupId })
+            .populate('dependency', '_id name priority estimated_duration deadline completed');
         
         if (!tasks || tasks.length === 0) {
             console.log(`[Scheduler] No tasks found for group: ${groupId}`);
@@ -138,11 +171,9 @@ export const scheduleGroupTasks = async (req, res) => {
 
         const nowInMinutes = Math.floor(Date.now() / 60000);
 
-        // Map MongoDB tasks to Java TaskModel format
+        // Map MongoDB tasks to Java TaskModel format with populated dependencies
         const formattedTasks = tasks.map(t => {
-            const taskDeadline = t.deadline ? Math.floor(new Date(t.deadline).getTime() / 60000) : (nowInMinutes + 1440);
-            // Make deadline relative to "now" for the scheduler which starts at 0
-            const relativeDeadline = Math.max(100, taskDeadline - nowInMinutes);
+            const relativeDeadline = computeRelativeDeadline(t.deadline, nowInMinutes);
             
             return {
                 taskId: t._id.toString(),
@@ -152,7 +183,9 @@ export const scheduleGroupTasks = async (req, res) => {
                 estimated_duration: t.estimated_duration || 30,
                 completed: t.completed || false,
                 deadline: relativeDeadline,
-                taskDependency: [], 
+                taskDependency: (t.dependency || []).map(dep =>
+                    mapDependencyToJavaModel(dep, groupId, computeRelativeDeadline(dep.deadline, nowInMinutes))
+                ),
                 userId: 1, 
                 userName: "User",
                 groupId: groupId.toString()
@@ -164,6 +197,7 @@ export const scheduleGroupTasks = async (req, res) => {
 
         console.log(`[Scheduler] Using Constraints - Start: ${startTime}, End: ${endTime}, Total: ${totalHours}`);
         console.log(`[Scheduler] Sample Task Deadline: ${formattedTasks[0].deadline}`);
+        console.log(`[Scheduler] Dependencies mapped: ${formattedTasks.filter(t => t.taskDependency.length > 0).length} tasks have dependencies`);
         console.log(`[Scheduler] Sending request to Java Spring Boot (Live URL)...`);
         
         // Call Java Scheduler Service with correct structure
@@ -203,4 +237,3 @@ export const scheduleGroupTasks = async (req, res) => {
         });
     }
 };
-

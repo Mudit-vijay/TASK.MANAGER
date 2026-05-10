@@ -9,6 +9,7 @@ const SchedulerPanel = ({ tasks, groupName }) => {
   const [policy, setPolicy] = useState({
     priorityMultiplier: 1.0,
     deadlineMultiplier: 1.0,
+    dependencyMultiplier: 1.0,
     optimizationGoal: 'BALANCED'
   });
 
@@ -25,9 +26,16 @@ const SchedulerPanel = ({ tasks, groupName }) => {
         taskId: Math.floor(Math.random() * 1000000), // In a real app, this would be the actual DB ID
         name: t.name,
         priority: t.priority || "medium",
-        estimated_duration: t.duration || 2,
+        estimated_duration: t.duration || t.estimated_duration || 2,
         deadline: t.deadline || 24,
-        taskDependency: [] // Future: Link this to actual UI for dependencies
+        taskDependency: (t.dependency || []).map(dep => ({
+            taskId: typeof dep === 'object' ? dep._id : dep,
+            name: typeof dep === 'object' ? dep.name : 'Unknown',
+            priority: typeof dep === 'object' ? dep.priority : 'Medium',
+            estimated_duration: typeof dep === 'object' ? dep.estimated_duration : 30,
+            deadline: 24, taskDependency: [], completed: false,
+            userId: 1, userName: "User", groupId: ""
+        }))
       }));
 
       const constraints = {
@@ -65,7 +73,7 @@ const SchedulerPanel = ({ tasks, groupName }) => {
       </div>
 
       {/* Configuration Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 bg-gray-900/50 p-4 rounded-lg">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 bg-gray-900/50 p-4 rounded-lg">
         <div>
           <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Algorithm</label>
           <select 
@@ -103,6 +111,20 @@ const SchedulerPanel = ({ tasks, groupName }) => {
           <div className="flex justify-between text-[10px] text-gray-500 mt-1">
             <span>Relaxed</span>
             <span>Urgency: {policy.deadlineMultiplier}x</span>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Dependency Focus</label>
+          <input 
+            type="range" min="0.5" max="5" step="0.5"
+            value={policy.dependencyMultiplier}
+            onChange={(e) => setPolicy({...policy, dependencyMultiplier: parseFloat(e.target.value)})}
+            className="w-full accent-amber-500"
+          />
+          <div className="flex justify-between text-[10px] text-gray-500 mt-1">
+            <span>Flexible</span>
+            <span>Chain Weight: {policy.dependencyMultiplier}x</span>
           </div>
         </div>
       </div>
