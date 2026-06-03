@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../../services/api";
@@ -81,11 +82,6 @@ const LoginSignup = () => {
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-gray-950 to-gray-800 text-white p-6 font-sans">
       <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-12">
-      <div className="w-full max-w-6xl mb-6">
-        <div className="bg-yellow-900/30 border border-yellow-600 text-yellow-200 rounded-xl p-4 text-sm text-center">
-          <strong>Note:</strong> This project is hosted on free-tier cloud servers. Services may occasionally take 3–5 minutes to start if they have been inactive. Since the application follows a microservices architecture, each service starts independently and may require additional time to become available. If the application does not respond immediately, please allow a few minutes for all services to initialize before assuming that the project is not working.
-        </div>
-      </div>
         {/* --- LOGIN CARD --- */}
         <div className="bg-gray-800 bg-opacity-80 backdrop-blur-sm shadow-2xl rounded-3xl p-10 flex flex-col items-center transition-transform duration-500 hover:scale-[1.02] hover:shadow-3xl border border-gray-700">
           <h2 className="text-3xl md:text-4xl font-extrabold mb-4 text-indigo-400 text-center tracking-tight">
