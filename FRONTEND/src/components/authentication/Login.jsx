@@ -197,7 +197,8 @@ const LoginSignup = () => {
           </Formik>
         </div>
       </div>
-      <div className="mt-8 text-center text-sm text-gray-400 max-w-4xl mx-auto leading-relaxed">
+    </div>
+          <div className="mt-8 text-center text-sm text-gray-400 max-w-4xl mx-auto leading-relaxed">
   <p>
     <strong>Note:</strong> This project is hosted on free-tier cloud servers.
     Services may occasionally take 3–5 minutes to start if they have been inactive.
@@ -207,7 +208,6 @@ const LoginSignup = () => {
     services to initialize before assuming that the project is not working.
   </p>
 </div>
-    </div>
   );
 };
 
