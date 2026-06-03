@@ -80,7 +80,7 @@ const LoginSignup = () => {
     "w-full bg-white text-gray-900 px-5 py-3 rounded-xl flex items-center justify-center space-x-3 font-semibold transition hover:bg-gray-200 shadow-md transform hover:-translate-y-0.5 active:translate-y-0";
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-gray-950 to-gray-800 text-white p-6 font-sans">
+<div className="flex flex-col justify-center items-center min-h-screen bg-gradient-to-br from-gray-950 to-gray-800 text-white p-6 font-sans">
       <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-12">
         {/* --- LOGIN CARD --- */}
         <div className="bg-gray-800 bg-opacity-80 backdrop-blur-sm shadow-2xl rounded-3xl p-10 flex flex-col items-center transition-transform duration-500 hover:scale-[1.02] hover:shadow-3xl border border-gray-700">
