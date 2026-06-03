@@ -197,7 +197,6 @@ const LoginSignup = () => {
           </Formik>
         </div>
       </div>
-      </div>
 
       <div className="mt-10 max-w-4xl mx-auto">
         <div className="bg-gray-900/40 border border-gray-700 rounded-xl px-5 py-4 text-center">
@@ -213,6 +212,7 @@ const LoginSignup = () => {
           </p>
         </div>
       </div>
+    </div>
   );
 };
 
