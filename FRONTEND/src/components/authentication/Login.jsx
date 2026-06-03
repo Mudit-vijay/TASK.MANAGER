@@ -213,7 +213,6 @@ const LoginSignup = () => {
           </p>
         </div>
       </div>
-    </div>
   );
 };
 
