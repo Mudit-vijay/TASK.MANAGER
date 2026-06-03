@@ -197,6 +197,16 @@ const LoginSignup = () => {
           </Formik>
         </div>
       </div>
+      <div className="mt-8 text-center text-sm text-gray-400 max-w-4xl mx-auto leading-relaxed">
+  <p>
+    <strong>Note:</strong> This project is hosted on free-tier cloud servers.
+    Services may occasionally take 3–5 minutes to start if they have been inactive.
+    Since the application follows a microservices architecture, each service starts
+    independently and may require additional time to become available. If the
+    application does not respond immediately, please allow a few minutes for all
+    services to initialize before assuming that the project is not working.
+  </p>
+</div>
     </div>
   );
 };
