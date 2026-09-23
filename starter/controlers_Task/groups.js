@@ -274,6 +274,10 @@ export const scheduleGroupTasks = async (req, res) => {
             return res.status(400).json({ message: "Scheduling time range must be positive." });
         }
 
+        const schedulerKey = process.env.SCHEDULER_API_KEY;
+        if (!schedulerKey || schedulerKey.length < 32) {
+            return res.status(503).json({ message: "Scheduler service is not configured." });
+        }
         const schedulerUrl = process.env.SCHEDULER_SERVICE_URL || "https://algorithm-scheduler.onrender.com";
         const response = await axios.post(`${schedulerUrl}/api/v1/scheduler/generate`, {
             tasks: formattedTasks,
@@ -291,7 +295,7 @@ export const scheduleGroupTasks = async (req, res) => {
                 dependencyMultiplier: 1.0
             },
             algorithmType: "branchAndBound"
-        }, { timeout: 15000 });
+        }, { timeout: 15000, headers: { "X-Scheduler-Key": schedulerKey } });
 
         if (!Array.isArray(response.data) || response.data.length !== pendingTasks.length) {
             await AuditLog.create({

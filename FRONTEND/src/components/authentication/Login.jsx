@@ -46,14 +46,10 @@ const LoginSignup = () => {
     setIsLoading(true);
     try {
       const res = await authService.createUser(values);
-      if (res?.authenticated) {
-        dispatch(setName(name));
-        dispatch(setEmail(email));
-        dispatch(setUserId(res.user._id));
-        navigate(`/taskManager`);
-      } else {
-        navigate(`/verify-otp/${res?.user?._id || 'verify'}`);
-      }
+      dispatch(setName(res.user.name));
+      dispatch(setEmail(res.user.email));
+      dispatch(setUserId(res.user._id));
+      navigate(`/taskManager`);
     } catch (err) {
       alert("Failed to create user. Please try again.");
     } finally {
@@ -88,7 +84,7 @@ const LoginSignup = () => {
           </p>
 
           <Formik
-            initialValues={{ email: "", password: "", OTP: "" }}
+            initialValues={{ email: "", password: "" }}
             onSubmit={handleLogin}
           >
             {({ values }) => (

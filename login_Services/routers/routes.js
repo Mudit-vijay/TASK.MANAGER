@@ -1,6 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const { login, createUser, OauthCreation, otpVerification, getCurrentUser, logout, getAllUsersAdmin, deleteUserAdmin } = require('../controllers/login');
+const { login, createUser, OauthCreation, getCurrentUser, logout, getAllUsersAdmin, deleteUserAdmin } = require('../controllers/login');
 const { google } = require('googleapis');
 require('dotenv').config();
 
@@ -11,7 +11,6 @@ const URI = process.env.GOOGLE_REDIRECT_URI
 router.post('/login', login);
 router.post('/createUser', createUser);
 router.post('/oauthcreation', OauthCreation)
-router.post('/otpVerification', otpVerification)
 router.get('/me', getCurrentUser);
 router.post('/logout', logout);
 

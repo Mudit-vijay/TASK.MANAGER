@@ -59,10 +59,6 @@ export const authService = {
         });
         return response;
     },
-    otpVerification: async (otp, email) => {
-        const res = await authApi.post('/otpVerification', { otp, email });
-        return res;
-    },
     me: async () => {
         const response = await authApi.get('/me');
         return response.data.user;

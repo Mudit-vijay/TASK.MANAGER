@@ -28,55 +28,6 @@ const establishSession = (res, user) => {
     res.cookie('token', token, authCookieOptions);
 };
 
-// --------------------
-// OTP Store (in-memory)
-const otpStore = new Map(); // key: email, value: otp
-
-// --------------------
-// Helper function to generate OTP
-function generateOTP(length = 6) {
-    let otp = '';
-    for (let i = 0; i < length; i++) {
-        otp += Math.floor(Math.random() * 10);
-    }
-    return otp;
-}
-
-// --------------------
-// Brevo Mail Sender (FIXED)
-async function sendEmail(receiveremail, otp) {
-    console.log("comes in that ")
-    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-        method: "POST",
-        headers: {
-            accept: "application/json",
-            "api-key": process.env.BREVO_API_KEY,
-            "content-type": "application/json"
-        },
-        body: JSON.stringify({
-            sender: {
-                name: "My App",
-                email: process.env.SENDGRID_VERIFIED_EMAIL // must be verified in Brevo
-            },
-            to: [
-                {
-                    email: receiveremail
-                }
-            ],
-            subject: "OTP VERIFICATION",
-            htmlContent: `<h2>Here is your OTP for email verification</h2><h1>${otp}</h1>`
-        })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        console.error("Brevo mail error:", data);
-        throw new Error("Email sending failed");
-    }
-    console.log("Brevo mail sent:", data);
-}
-
 const login = async (req, res) => {
     console.log("login");
     try {
@@ -93,8 +44,6 @@ const login = async (req, res) => {
         if (!isPasswordValid) {
             return res.status(400).json("Invalid password");
         }
-        updateverification(email);
-
         establishSession(res, data);
         return res.status(200).json({ user: publicUser(data) });
 
@@ -115,25 +64,17 @@ const createUser = async (req, res) => {
         }
 
         const hashedPassword = bcrypt.hashSync(password, 10);
-        const otp = generateOTP();
-        otpStore.set(email, otp);
-
         const role = "USER";//make it dynamic **
         const user = await loginSchema.create({
             name,
             email,
             password: hashedPassword,
             role,
-            last_verified: Date.now()
+            emailVerified: false
         });
 
-        if (process.env.OTP_ENABLED === 'false') {
-            establishSession(res, user);
-            return res.status(200).json({ authenticated: true, user: publicUser(user) });
-        }
-
-        await sendEmail(user.email, otp); 
-        return res.status(200).json({ message: "OTP sent to email", email: user.email, requiresOtp: true });
+        establishSession(res, user);
+        return res.status(201).json({ authenticated: true, user: publicUser(user) });
 
     } catch (err) {
         console.log(`Error in creating user: ${err.message}`);
@@ -200,42 +141,6 @@ const OauthCreation = async (req, res) => {
     }
 };
 
-// --------------------
-// OTP Verification
-//create a seprate method to check for token expiration every time through cookies;
-//if i require role here then i will get it from backend directly because user is login and role must allready preesnt on backend for token
-const otpVerification = async (req, res) => {
-    console.log("comes in otp verification");
-    try {
-        const { otp: userotp, email } = req.body
-
-        // Toggle for OTP verification
-        if (process.env.OTP_ENABLED === 'false') {
-            const data = await findUserDetails(email);
-            if (!data) return res.status(404).json({ message: "User not found" });
-            establishSession(res, data);
-            return res.status(200).json({ msg: "OTP Verification Successfull", data: publicUser(data) });
-        }
-
-
-
-        const systemotp = otpStore.get(email);
-        const data = await findUserDetails(email)
-        if (!data) {
-            return res.status(401).json("user not found");
-        }
-        if (!systemotp || systemotp !== userotp) {
-            return res.status(401).json({ message: "OTP Verification Failed" });
-        }
-        otpStore.delete(email);
-        await updateverification(email);
-        establishSession(res, data);
-        return res.status(200).json({ msg: "OTP Verification Successfull", data: publicUser(data) });
-    }
-    catch (err) {
-        return res.status(401).json("OTP Verification Failed");
-    }
-}
 const genrerateToken = (id, email, role) => {
     const token = jwt.sign(
         { id: id, email: email, role: role },
@@ -262,25 +167,6 @@ const logout = (req, res) => {
 async function findUserDetails(email) {
     return await loginSchema.findOne({ email });
 }
-function checkVerified(date) {
-    if (!date) return true; // treat missing date as expired
-
-    const now = Date.now();
-    const lastVerified = new Date(date).getTime();
-
-    const ONE_DAY = 24 * 60 * 60 * 1000;
-
-    return (now - lastVerified) > ONE_DAY;
-}
-
-async function updateverification(email) {
-    return await loginSchema.findOneAndUpdate(
-        { email },
-        { $set: { last_verified: Date.now() } },
-        { new: true }
-    );
-}
-
 const getAllUsersAdmin = async (req, res) => {
     try {
         const users = await loginSchema.find({}).select('-password');
@@ -307,7 +193,6 @@ module.exports = {
     login,
     createUser,
     OauthCreation,
-    otpVerification,
     getCurrentUser,
     logout,
     getAllUsersAdmin,

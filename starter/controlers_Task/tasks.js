@@ -203,7 +203,9 @@ const deletetask = async (req, res) => {
             return res.status(404).json({ msg: "Group not found" });
         }
 
-        const task = await Task.findByIdAndDelete(taskId);
+        // The group in the URL has been authorized by the route middleware, so
+        // it must also be part of the delete query.
+        const task = await Task.findOneAndDelete({ _id: taskId, groupId });
         if (!task) {
              return res.status(404).json({ msg: "Task not found" });
         }
@@ -330,6 +332,10 @@ const schedulePersonalTasks = async (req, res) => {
             return res.status(400).json({ msg: "Scheduling time range must be positive whole minutes." });
         }
 
+        const schedulerKey = process.env.SCHEDULER_API_KEY;
+        if (!schedulerKey || schedulerKey.length < 32) {
+            return res.status(503).json({ msg: "Scheduler service is not configured." });
+        }
         const schedulerUrl = process.env.SCHEDULER_SERVICE_URL || "https://algorithm-scheduler.onrender.com";
         const now = Math.floor(Date.now() / 60000);
         const formattedTasks = tasks.map(task => ({
@@ -360,7 +366,7 @@ const schedulePersonalTasks = async (req, res) => {
                 dependencyMultiplier: 1
             },
             algorithmType: "branchAndBound"
-        }, { timeout: 15000 });
+        }, { timeout: 15000, headers: { "X-Scheduler-Key": schedulerKey } });
 
         if (!Array.isArray(response.data) || response.data.length !== tasks.length) {
             await AuditLog.create({

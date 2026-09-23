@@ -19,9 +19,12 @@ const customer_Schema = new mongoose.Schema({
         default: "USER",
         enum: ["CREATOR", "ADMIN", "USER"],
     },
+    emailVerified: {
+        type: Boolean,
+    },
     last_verified:{
         type:Date,
-        required:true,
+        required:false,
     }
 }, { timestamps: true })
 const customer = new mongoose.model('customer', customer_Schema);

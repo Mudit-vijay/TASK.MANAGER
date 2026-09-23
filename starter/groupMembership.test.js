@@ -6,7 +6,7 @@ import Task from "./models/tasks.js";
 import AuditLog from "./models/AuditLogs.js";
 import { groupRole } from "./middlewares/membership.js";
 import { createGroups, getAllGroups } from "./controlers_Task/groups.js";
-import { createtask } from "./controlers_Task/tasks.js";
+import { createtask, deletetask } from "./controlers_Task/tasks.js";
 
 const response = () => ({
     statusCode: 200,
@@ -112,5 +112,30 @@ test("admin can assign to a member of this group but not a member of another gro
         Group.findById = originalFindById;
         Task.create = originalCreate;
         AuditLog.create = originalAuditCreate;
+    }
+});
+
+test("group task deletion cannot delete a task from another group", async () => {
+    const originalGroupFind = Group.findById;
+    const originalDelete = Task.findOneAndDelete;
+    const originalUpdate = Task.updateMany;
+    let deleteQuery;
+    let cascadeCalled = false;
+    try {
+        Group.findById = async () => ({ _id: "authorized-group" });
+        Task.findOneAndDelete = async query => {
+            deleteQuery = query;
+            return null;
+        };
+        Task.updateMany = async () => { cascadeCalled = true; };
+        const res = response();
+        await deletetask({ params: { groupId: "authorized-group", taskId: "other-group-task" } }, res);
+        assert.deepEqual(deleteQuery, { _id: "other-group-task", groupId: "authorized-group" });
+        assert.equal(res.statusCode, 404);
+        assert.equal(cascadeCalled, false);
+    } finally {
+        Group.findById = originalGroupFind;
+        Task.findOneAndDelete = originalDelete;
+        Task.updateMany = originalUpdate;
     }
 });

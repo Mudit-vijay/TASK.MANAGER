@@ -6,7 +6,6 @@ import GroupView from "../temp/groupView";
 import ProtectedRoute from "./ProtectedRoute";
 import "./App.css";
 import OAuthSuccess from "../temp/hack";
-import Otpverification from "./components/auth/Otpverification.jsx";
 import PersonalTasks from "./components/task-manager/PersonalTasks.jsx";
 import AuditLogs from "./components/task-manager/AuditLogs.jsx";
 
@@ -17,7 +16,6 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/oauth-success/:token" element={<OAuthSuccess />} />
-          <Route path="/verify-otp/:id" element={<Otpverification />} />
           <Route
             path="/taskManager"
             element={<ProtectedRoute><Dashboard /></ProtectedRoute>}

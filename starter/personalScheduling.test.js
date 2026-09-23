@@ -42,11 +42,13 @@ test("personal scheduling sends eligible dependencies and records the run", asyn
     const originalAuditCreate = AuditLog.create;
     const originalRunCreate = ScheduleRun.create;
     const originalUrl = process.env.SCHEDULER_SERVICE_URL;
+    const originalKey = process.env.SCHEDULER_API_KEY;
     const calls = [];
     const audits = [];
     let savedRun;
     try {
         process.env.SCHEDULER_SERVICE_URL = "http://localhost:9001";
+        process.env.SCHEDULER_API_KEY = "test-only-scheduler-key-long-enough-123";
         const taskA = { _id: "a", name: "First", priority: "High", estimated_duration: 30,
             dependency: [], groupId: "g", userName: "User" };
         const taskB = { _id: "b", name: "Second", priority: "Medium", estimated_duration: 30,
@@ -69,6 +71,7 @@ test("personal scheduling sends eligible dependencies and records the run", asyn
         await schedulePersonalTasks({ user: { id: "owner" }, body: { startTime: 540, endTime: 1020, totalHours: 480 } }, response);
         assert.equal(response.statusCode, 200);
         assert.equal(calls.length, 1);
+        assert.equal(calls[0][2].headers["X-Scheduler-Key"], "test-only-scheduler-key-long-enough-123");
         assert.deepEqual(calls[0][1].tasks[1].taskDependency.map(dep => dep.taskId), ["a"]);
         assert.equal(savedRun.scope, "PERSONAL");
         assert.equal(audits[0].details.outcome, "SCHEDULED");
@@ -79,5 +82,7 @@ test("personal scheduling sends eligible dependencies and records the run", asyn
         ScheduleRun.create = originalRunCreate;
         if (originalUrl === undefined) delete process.env.SCHEDULER_SERVICE_URL;
         else process.env.SCHEDULER_SERVICE_URL = originalUrl;
+        if (originalKey === undefined) delete process.env.SCHEDULER_API_KEY;
+        else process.env.SCHEDULER_API_KEY = originalKey;
     }
 });

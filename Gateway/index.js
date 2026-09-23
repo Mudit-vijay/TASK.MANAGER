@@ -29,7 +29,7 @@ app.use((req, res, next) => {
 const authProxy = createProxyMiddleware({
     target: process.env.LOGIN_SERVICE_URL || 'https://backend-b-wxdw.onrender.com',
     changeOrigin: true,
-    pathFilter: ['/api/v1/login', '/api/v1/createUser', '/api/v1/oauthcreation', '/api/v1/otpVerification', '/api/v1/me', '/api/v1/logout', '/api/v1/admin/users'],
+    pathFilter: ['/api/v1/login', '/api/v1/createUser', '/api/v1/oauthcreation', '/api/v1/me', '/api/v1/logout', '/api/v1/admin/users'],
     on: {
         error: (err, req, res) => {
             console.error('Auth Proxy Error:', err.message);
