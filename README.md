@@ -1,322 +1,96 @@
 # ⚡ Task Orchestrator
 
-> A production-grade, polyglot microservices platform for intelligent task scheduling — powered by a constraint-based AI engine built with Backtracking and Branch-and-Bound algorithms.
+Task Orchestrator is a polyglot task-management and scheduling project. Teams can assign work, set priorities and dependencies, and request schedules from a separate Spring Boot algorithm service.
 
-[![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen?style=for-the-badge)](https://task-manager-1-5jlg.onrender.com)
-[![Java](https://img.shields.io/badge/Java-21-orange?style=flat-square&logo=openjdk)](https://openjdk.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-22-green?style=flat-square&logo=node.js)](https://nodejs.org/)
-[![React](https://img.shields.io/badge/React-18-blue?style=flat-square&logo=react)](https://react.dev/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-darkgreen?style=flat-square&logo=mongodb)](https://www.mongodb.com/)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker)](https://docker.com/)
+[Live frontend](https://task-manager-1-5jlg.onrender.com) · [Scheduling engine repository](https://github.com/Mudit-vijay/Algorithm.Scheduler)
 
----
+## What it does
 
-## 📋 Table of Contents
+- **Workspaces:** Create Personal, Team, or Project groups. Registered users can belong to several groups, with a separate Member or Group Admin role in each.
+- **Task assignment:** A group owner or admin can create and reassign tasks to members of that group. The personal view shows tasks assigned to the signed-in user; the group view shows the group's tasks.
+- **Dependencies:** Tasks can depend on other tasks in the same group. Updates reject cycles, and an assignee cannot complete a task until its prerequisites are complete.
+- **Scheduling:** The task service loads eligible tasks, priorities, durations, deadlines, and dependencies from MongoDB, then calls the Java scheduler. Owners and group admins can schedule a group; users can schedule their assigned personal tasks.
+- **Saved results:** Schedule runs are persisted, and the latest group or personal run is rendered as a Gantt chart. Scheduling, assignment, creation, and completion events are recorded in an audit log.
+- **Authentication:** Email/password, OTP verification, and Google OAuth. The auth service signs a JWT and sends it in an HttpOnly session cookie; the browser does not store the token in local storage.
 
-- [Overview](#overview)
-- [Architecture](#-architecture)
-- [Tech Stack](#-tech-stack)
-- [Features](#-features)
-- [Scheduling Engine](#-scheduling-engine)
-- [Getting Started](#-getting-started)
-- [Environment Variables](#-environment-variables)
-- [Deployment](#-deployment)
-- [API Reference](#-api-reference)
-- [Project Structure](#-project-structure)
+The Java service supports topological dependency ordering, cycle detection, backtracking, and Branch-and-Bound scheduling. The task service currently requests `branchAndBound`. It treats a schedule that omits pending tasks as infeasible.
 
----
+## Architecture
 
-## Overview
-
-Task Orchestrator is a distributed task management system designed to optimize how teams plan and execute work. Unlike simple to-do apps, it uses a **Java-based AI scheduling engine** that analyzes task priorities, deadlines, durations, and dependencies to compute optimal execution timelines using graph algorithms and constraint satisfaction techniques.
-
-The platform is built as **6 independently deployable microservices**, connected through a centralized API Gateway, and features collaborative workspaces, multi-strategy authentication, and a premium React dashboard.
-
----
-
-## 🏗 Architecture
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    FRONTEND (React.js)                   │
-│              task-manager-1-5jlg.onrender.com            │
-└────────────────────────┬────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│                  API GATEWAY (Node.js)                    │
-│              task-manager-xp1g.onrender.com              │
-│         Reverse Proxy · CORS · Helmet · Compression      │
-└──────┬──────────┬───────────────┬───────────┬───────────┘
-       │          │               │           │
-       ▼          ▼               ▼           ▼
-┌───────────┐ ┌──────────┐ ┌───────────┐ ┌──────────┐
-│   Auth    │ │  Starter │ │ Scheduler │ │  OAuth   │
-│  Service  │ │  Service │ │  Engine   │ │ Service  │
-│ (Node.js) │ │(Node.js) │ │  (Java)   │ │(Node.js) │
-│  Login    │ │  Tasks   │ │ Spring    │ │ Google   │
-│  Signup   │ │  Groups  │ │ Boot      │ │ SSO      │
-│  OTP      │ │  CRUD    │ │ B&B/BT    │ │          │
-│  JWT      │ │  Collab  │ │ Topo Sort │ │          │
-└─────┬─────┘ └────┬─────┘ └───────────┘ └──────────┘
-      │             │
-      ▼             ▼
-┌─────────────────────────┐
-│     MongoDB Atlas        │
-│   Users · Tasks · Groups │
-└─────────────────────────┘
+```text
+React frontend ── HTTPS/cookies ──> API Gateway ──> Auth service ──> MongoDB
+                                      │
+                                      ├───────────> Task/group service ──> MongoDB
+                                      │                     │
+                                      │                     └────────────> Java scheduler
+                                      └───────────> OAuth service
 ```
 
----
+This repository contains the React frontend, API Gateway, auth service, and task/group service. The [Java scheduler](https://github.com/Mudit-vijay/Algorithm.Scheduler) is a separate repository. The OAuth service is deployed separately. The browser calls scheduling endpoints on the task service through the gateway; it does not call the Java scheduler directly.
 
-## 🛠 Tech Stack
+| Component | Main technology | Directory |
+|---|---|---|
+| Frontend | React 19, Vite, Axios | `FRONTEND/` |
+| API Gateway | Node.js, Express, HTTP proxy | `Gateway/` |
+| Authentication | Node.js, Express, MongoDB, JWT cookies | `login_Services/` |
+| Tasks and groups | Node.js, Express, Mongoose | `starter/` |
+| Scheduling engine | Java 21, Spring Boot 4 | Separate repository |
 
-| Layer | Technology |
-|---|---|
-| **Frontend** | React.js, Redux Toolkit, Axios, Lucide Icons, React Hook Form |
-| **API Gateway** | Node.js, Express, http-proxy-middleware |
-| **Auth Service** | Node.js, Express, JWT, bcrypt.js, Brevo SMTP |
-| **Task Service** | Node.js, Express, Mongoose, Axios |
-| **Scheduling Engine** | Java 21, Spring Boot 4.0, Lombok |
-| **OAuth** | Google OAuth 2.0 (Stateless) |
-| **Database** | MongoDB Atlas |
-| **Containerization** | Docker (multi-stage builds) |
-| **Security** | Helmet.js, CORS, HttpOnly Cookies, Compression |
-| **Deployment** | Render (6 services) |
+## Run locally
 
----
+Prerequisites: Node.js, MongoDB, Java 21 for the scheduler, and Maven or the scheduler's Maven wrapper. Run each service in its own terminal. Copy each service's `.env.example` to `.env` and replace placeholders. `.env` files are ignored by Git.
 
-## ✨ Features
+For a fully local run, set the same `JWT` secret in `login_Services/.env` and `starter/.env`, and use the same local MongoDB database in both. Set `NODE_ENV=development` on auth for HTTP cookies. Set `OTP_ENABLED=false` **only for disposable local testing** if you do not have a mail provider. Keep OTP enabled in production.
 
-### Core
-- **AI-Powered Scheduling** — Constraint-based optimization engine that computes optimal task timelines
-- **Collaborative Workspaces** — Create Personal, Team, or Project workspaces with email-based member invitations
-- **Role-Based Views** — Owned workspaces ("Primary Assets") vs. shared workspaces ("External Alliances")
-- **Task Management** — Full CRUD with priority levels, deadlines, estimated durations, and completion tracking
+Set these local URL overrides:
 
-### Authentication & Security
-- **Multi-Strategy Auth** — Email/password login, Google OAuth 2.0 SSO, and OTP email verification
-- **Session Management** — Automatic JWT expiry detection with re-authentication modal
-- **Production Security** — Helmet.js headers, Gzip compression, strict CORS whitelisting, HttpOnly cookies
+| Service | Variable | Local value |
+|---|---|---|
+| Gateway | `LOGIN_SERVICE_URL` | `http://localhost:5000` |
+| Gateway | `STARTER_SERVICE_URL` | `http://localhost:9000` |
+| Gateway | `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` |
+| Auth and task services | `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` |
+| Task service | `SCHEDULER_SERVICE_URL` | `http://localhost:9001` |
+| Frontend | `VITE_API_URL` | `http://localhost:8080/api/v1` |
+| Frontend | `VITE_OAUTH_URL` | URL of your local OAuth service, if running one |
 
-### User Experience
-- **Dark / Light Mode** — System-wide theme toggle with persistent preference
-- **Premium UI** — Glassmorphism design, micro-animations, custom confirmation modals
-- **AI Timeline Visualization** — Horizontal scroll of optimized task phases with start/end times
-- **Configurable Schedule Window** — Users set their own working hours (e.g., 09:00–17:00)
-
----
-
-## 🧠 Scheduling Engine
-
-The Java Spring Boot engine is the core intelligence of the platform. It receives tasks from the Node.js backend and returns an optimized execution timeline.
-
-### Algorithms Implemented
-
-| Algorithm | Purpose |
-|---|---|
-| **Topological Sort** | Resolves task dependency order and detects circular dependencies |
-| **Backtracking** | Explores all valid schedules via recursive constraint satisfaction |
-| **Branch and Bound** | Prunes infeasible branches early for faster optimal solutions |
-
-### Scoring Model
-
-Each task is scored using a multi-factor **Weightage** system:
-
-```
-Score = (priorityMultiplier × priority) 
-      + (deadlineMultiplier × deadline_urgency) 
-      + (dependencyMultiplier × dependency_depth)
-```
-
-### Constraint System
-
-```json
-{
-  "constraints": {
-    "startTime": 540,
-    "endTime": 1020,
-    "totalHours": 480,
-    "totalDays": 7
-  },
-  "policy": {
-    "optimizationGoal": "EARLIEST_DEADLINE",
-    "priorityMultiplier": 1.0,
-    "deadlineMultiplier": 1.0,
-    "dependencyMultiplier": 1.0
-  },
-  "algorithmType": "backtracking"
-}
-```
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- **Node.js** v18+
-- **Java** JDK 21
-- **Maven** (or use the included `mvnw` wrapper)
-- **MongoDB** Atlas connection string
-- **Algorithm.scheduler** checked out separately (the Java service is not in this repository)
-- **Docker** (optional, for containerized scheduler)
-
-### Installation
+The frontend and gateway default to the Render production URLs when no overrides are provided. Restart Vite after changing `VITE_*` values; they are embedded at build time.
 
 ```bash
-# Clone the repository
-git clone https://github.com/Mudit-vijay/TASK.MANAGER.git
-cd TASK.MANAGER
-```
-
-#### 1. Frontend
-```bash
-cd FRONTEND
-npm install
-npm run dev
-# → http://localhost:5173
-```
-
-#### 2. API Gateway
-```bash
-cd Gateway
-npm install
-node index.js
-# → http://localhost:8080
-```
-
-#### 3. Auth Service
-```bash
+# Terminal 1: from this repository root
 cd login_Services
-npm install
+npm ci
 node index.js
-# → http://localhost:5000
-```
 
-#### 4. Task/Group Service
-```bash
+# Terminal 2: from this repository root
 cd starter
-npm install
+npm ci
 node app.js
-# → http://localhost:9000
+
+# Terminal 3: from this repository root
+cd Gateway
+npm ci
+node index.js
+
+# Terminal 4: from this repository root
+cd FRONTEND
+npm ci
+npm run dev
 ```
 
-#### 5. Scheduling Engine
-```bash
-cd ../Algorithm.scheduler
-./mvnw spring-boot:run
-# → http://localhost:9001
-```
+The defaults are auth `5000`, task service `9000`, gateway `8080`, and Vite `5173`. Clone [Algorithm.Scheduler](https://github.com/Mudit-vijay/Algorithm.Scheduler) alongside this repository and run `./mvnw spring-boot:run` from its root (`.\mvnw.cmd spring-boot:run` on Windows); it listens on `9001` by default. Google sign-in also requires the separately configured OAuth service.
 
-**Or with Docker:**
-```bash
-cd ../Algorithm.scheduler
-docker build -t algorithm-scheduler .
-docker run -p 9001:9001 algorithm-scheduler
-```
+## Deployment
 
----
+Current production defaults target these Render URLs. Set the corresponding environment variables to your own URLs if any service moves.
 
-## 🔐 Environment Variables
+| Service | URL |
+|---|---|
+| Frontend | `https://task-manager-1-5jlg.onrender.com` |
+| Gateway | `https://task-manager-xp1g.onrender.com` |
+| Task service | `https://backend-a-tvul.onrender.com` |
+| Auth service | `https://backend-b-wxdw.onrender.com` |
+| Scheduler | `https://algorithm-scheduler.onrender.com` |
+| OAuth service | `https://oauth-service-fyrc.onrender.com` |
 
-Copy each service's `.env.example` to `.env` and replace placeholders. Never commit `.env`. Set the same long random `JWT` secret on auth and task services. Auth cookies default to production (`Secure` and `SameSite=None`); set `NODE_ENV=development` only for local HTTP testing. The task service defaults to the Render scheduler URL but `SCHEDULER_SERVICE_URL` can override it. The frontend is built with the production Gateway and OAuth URLs by default. For local development, override `VITE_API_URL`, `VITE_OAUTH_URL`, gateway service URLs, and `CORS_ALLOWED_ORIGINS` with your local addresses. Restart Vite after changing `VITE_*` values.
-
----
-
-## ☁️ Deployment
-
-The current production defaults target these **Render** services. Confirm the URLs and environment variables in your deployment before publishing a new build:
-
-| Service | URL | Runtime |
-|---|---|---|
-| Frontend | `task-manager-1-5jlg.onrender.com` | Static Site |
-| Gateway | `task-manager-xp1g.onrender.com` | Node.js |
-| Starter | `backend-a-tvul.onrender.com` | Node.js |
-| Login | `backend-b-wxdw.onrender.com` | Node.js |
-| Scheduler | `algorithm-scheduler.onrender.com` | Docker |
-| OAuth | `oauth-service-fyrc.onrender.com` | Node.js |
-
----
-
-## 📡 API Reference
-
-### Authentication
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/v1/login` | Email/password login |
-| `POST` | `/api/v1/createUser` | Register + OTP |
-| `POST` | `/api/v1/otpverification` | Verify OTP code |
-| `POST` | `/api/v1/oauthcreation` | Google OAuth callback |
-
-### Workspaces
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/v1/group/groups` | List user's workspaces |
-| `POST` | `/api/v1/group/groups` | Create workspace |
-| `DELETE` | `/api/v1/group/groups/:id` | Delete workspace |
-
-### Tasks
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/v1/task/:groupId/tasks` | List tasks in workspace |
-| `POST` | `/api/v1/task/:groupId/tasks` | Create task |
-| `PATCH` | `/api/v1/task/:groupId/tasks/:taskId` | Update task |
-| `DELETE` | `/api/v1/task/:groupId/tasks/:taskId` | Delete task |
-
-### Scheduler
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/v1/group/groups/:groupId/schedule` | Run AI optimization |
-| `GET` | `/api/v1/scheduler/health` | Scheduler health check |
-
----
-
-## 📁 Project Structure
-
-```
-TASK.MANAGER/
-├── FRONTEND/                  # React.js SPA
-│   ├── src/
-│   │   ├── components/        # Login, OTP, NavBar
-│   │   ├── services/          # Axios API layer
-│   │   └── App.jsx            # Route definitions
-│   └── temp/                  # Dashboard, GroupView, OAuth
-│
-├── Gateway/                   # API Gateway (reverse proxy)
-│   └── index.js
-│
-├── login_Services/            # Auth microservice
-│   ├── controllers/login.js   # Login, Signup, OTP, OAuth
-│   ├── schemas/               # Mongoose user schema
-│   └── routers/               # Express routes
-│
-├── starter/                   # Task & Group microservice
-│   ├── controlers_Task/       # Groups, Tasks, Scheduler bridge
-│   ├── models/                # Mongoose schemas
-│   └── routes/                # Express routes
-│
-├── Algorithm.scheduler/       # Java scheduling engine
-│   ├── src/main/java/
-│   │   └── Algorithm/scheduler/
-│   │       ├── Controller/    # REST endpoints
-│   │       ├── DataModel/     # TaskModel, Schedule, Policy
-│   │       └── Service/       # Backtracking, B&B, TopoSort
-│   ├── Dockerfile             # Multi-stage build
-│   └── pom.xml                # Maven config
-│
-└── README.md
-```
-
----
-
-## 👤 Author
-
-**Mudit Vijay**
-- GitHub: [@Mudit-vijay](https://github.com/Mudit-vijay)
-
----
-
-## 📄 License
-
-This project is for educational and portfolio purposes.
+Set the same strong `JWT` secret on auth and task services, production `MONGO_URI` values, the auth mail-provider settings, and the exact frontend origin in `CORS_ALLOWED_ORIGINS`. Keep `OTP_ENABLED=true`. Auth cookies default to `Secure` and `SameSite=None` outside development. The task service defaults to the Render scheduler URL; `SCHEDULER_SERVICE_URL` can override it. Use the service `.env.example` files as a deployment checklist. Never put secrets in `VITE_*` values: those values are visible in the browser bundle.
