@@ -5,8 +5,7 @@ const GATEWAY = import.meta.env.VITE_API_URL || 'https://task-manager-xp1g.onren
 const BASE_URLS = {
     AUTH: GATEWAY,
     TASKS: GATEWAY,
-    GROUPS: GATEWAY,
-    SCHEDULER: `${GATEWAY}/scheduler`
+    GROUPS: GATEWAY
 };
 
 const createApiInstance = (baseURL) => {
@@ -16,15 +15,6 @@ const createApiInstance = (baseURL) => {
         headers: {
             'Content-Type': 'application/json',
         },
-    });
-
-    // Add interceptor to attach token
-    instance.interceptors.request.use((config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = token;
-        }
-        return config;
     });
 
     // Add interceptor to handle session expiry
@@ -39,7 +29,6 @@ const createApiInstance = (baseURL) => {
             if (is401 || isJwtExpired) {
                 // Dispatch custom event for session expiry
                 window.dispatchEvent(new CustomEvent('session-expired'));
-                localStorage.removeItem('token');
             }
             return Promise.reject(error);
         }
@@ -51,7 +40,6 @@ const createApiInstance = (baseURL) => {
 const authApi = createApiInstance(BASE_URLS.AUTH);
 const tasksApi = createApiInstance(BASE_URLS.TASKS);
 const groupsApi = createApiInstance(BASE_URLS.GROUPS);
-const schedulerApi = createApiInstance(BASE_URLS.SCHEDULER);
 
 export const authService = {
     login: async (email, password) => {
@@ -72,8 +60,15 @@ export const authService = {
         return response;
     },
     otpVerification: async (otp, email) => {
-        const res = await authApi.post('/otpverification', { otp, email });
+        const res = await authApi.post('/otpVerification', { otp, email });
         return res;
+    },
+    me: async () => {
+        const response = await authApi.get('/me');
+        return response.data.user;
+    },
+    logout: async () => {
+        await authApi.post('/logout');
     }
 };
 
@@ -90,7 +85,7 @@ export const groupService = {
         return response.data;
     },
     updateGroup: async (groupId, body) => {
-        const response = await groupsApi.put(`/group/${groupId}/update`, { body });
+        const response = await groupsApi.patch(`/group/groups/${groupId}`, { body });
         return response.data;
     },
     deleteGroup: async (id) => {
@@ -100,6 +95,18 @@ export const groupService = {
     scheduleTasks: async (groupId, constraints = {}) => {
         const response = await groupsApi.post(`/group/groups/${groupId}/schedule`, constraints);
         return response.data;
+    },
+    getLatestSchedule: async (groupId) => {
+        const response = await groupsApi.get(`/group/groups/${groupId}/schedule/latest`);
+        return response.data.schedule;
+    },
+    getMembers: async (groupId) => {
+        const response = await groupsApi.get(`/group/groups/${groupId}/members`);
+        return response.data.members;
+    },
+    getAuditLogs: async () => {
+        const response = await groupsApi.get("/group/audit");
+        return response.data.logs;
     }
 };
 
@@ -107,6 +114,22 @@ export const taskSERVICES = {
     getALLTASKS: async (groupId) => {
         const response = await tasksApi.get(`/task/${groupId}/tasks`);
         return response.data;
+    },
+    getPersonalTasks: async () => {
+        const response = await tasksApi.get("/task/personal/tasks");
+        return response.data.tasks;
+    },
+    schedulePersonalTasks: async (constraints = {}) => {
+        const response = await tasksApi.post("/task/personal/schedule", constraints);
+        return response.data;
+    },
+    getLatestPersonalSchedule: async () => {
+        const response = await tasksApi.get("/task/personal/schedule/latest");
+        return response.data.schedule;
+    },
+    completeAssignedTask: async (groupId, taskId) => {
+        const response = await tasksApi.patch(`/task/${groupId}/tasks/${taskId}/complete`);
+        return response.data.task;
     },
     createTASK: async (groupId, taskData) => {
         const response = await tasksApi.post(`/task/${groupId}/tasks`, taskData);
@@ -149,22 +172,9 @@ export const adminService = {
     }
 };
 
-export const schedulerService = {
-    generateSchedule: async (tasks, constraints, policy, algorithmType) => {
-        const response = await schedulerApi.post('/generate', {
-            tasks,
-            constraints,
-            policy,
-            algorithmType
-        });
-        return response.data;
-    }
-};
-
 export default {
     authService,
     groupService,
     taskSERVICES,
-    adminService,
-    schedulerService
+    adminService
 };

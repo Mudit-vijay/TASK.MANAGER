@@ -7,6 +7,8 @@ import ProtectedRoute from "./ProtectedRoute";
 import "./App.css";
 import OAuthSuccess from "../temp/hack";
 import Otpverification from "./components/auth/Otpverification.jsx";
+import PersonalTasks from "./components/task-manager/PersonalTasks.jsx";
+import AuditLogs from "./components/task-manager/AuditLogs.jsx";
 
 const App = () => {
   return (
@@ -18,12 +20,14 @@ const App = () => {
           <Route path="/verify-otp/:id" element={<Otpverification />} />
           <Route
             path="/taskManager"
-            element={<Dashboard />}
+            element={<ProtectedRoute><Dashboard /></ProtectedRoute>}
           />
           <Route
             path="/group/:id"
-            element={<GroupView />}
+            element={<ProtectedRoute><GroupView /></ProtectedRoute>}
           />
+          <Route path="/personal" element={<ProtectedRoute><PersonalTasks /></ProtectedRoute>} />
+          <Route path="/audit" element={<ProtectedRoute><AuditLogs /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

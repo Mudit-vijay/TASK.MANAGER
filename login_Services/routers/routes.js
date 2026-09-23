@@ -1,6 +1,6 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const { login, createUser, OauthCreation, otpVerification, getAllUsersAdmin, deleteUserAdmin } = require('../controllers/login');
+const { login, createUser, OauthCreation, otpVerification, getCurrentUser, logout, getAllUsersAdmin, deleteUserAdmin } = require('../controllers/login');
 const { google } = require('googleapis');
 require('dotenv').config();
 
@@ -12,10 +12,12 @@ router.post('/login', login);
 router.post('/createUser', createUser);
 router.post('/oauthcreation', OauthCreation)
 router.post('/otpVerification', otpVerification)
+router.get('/me', getCurrentUser);
+router.post('/logout', logout);
 
 // --- Admin Middleware ---
 const checkAdmin = (req, res, next) => {
-    const token = req.cookies?.token || req.headers['authorization']?.split(' ')[1];
+    const token = req.cookies?.token;
     if (!token) return res.status(401).json({ msg: "No token found" });
 
     try {

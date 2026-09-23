@@ -4,7 +4,7 @@ const ROW_HEIGHT = 32;
 const ROW_GAP = 8;
 const LABEL_WIDTH = 160;
 
-const GanttChart = ({ scheduledTasks }) => {
+const GanttChart = ({ scheduledTasks, startTime = 0 }) => {
   const trackContainerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
@@ -13,7 +13,7 @@ const GanttChart = ({ scheduledTasks }) => {
     if (!trackContainerRef.current) return;
     const observer = new ResizeObserver(entries => {
       for (const entry of entries) {
-        setContainerWidth(entry.contentRect.width);
+        setContainerWidth(Math.max(0, entry.contentRect.width - LABEL_WIDTH));
       }
     });
     observer.observe(trackContainerRef.current);
@@ -34,8 +34,12 @@ const GanttChart = ({ scheduledTasks }) => {
   }
 
   // Find the total time range
-  const maxTime = Math.max(...scheduledTasks.map(t => t.endTime), 24);
-  const timeUnits = Array.from({ length: maxTime + 1 }, (_, i) => i);
+  const maxTime = Math.max(...scheduledTasks.map(t => t.endTime), 1);
+  const timeUnits = Array.from({ length: 5 }, (_, i) => Math.round(maxTime * i / 4));
+  const clockTime = minutes => {
+    const value = startTime + minutes;
+    return `${String(Math.floor(value / 60) % 24).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
+  };
 
   // Calculate SVG arrow coordinates for each dependency link
   const buildArrowLines = () => {
@@ -81,7 +85,7 @@ const GanttChart = ({ scheduledTasks }) => {
           <div className="flex flex-1 border-b border-gray-700">
             {timeUnits.map(unit => (
               <div key={unit} className="flex-1 text-center text-xs text-gray-500 border-l border-gray-800">
-                {unit}h
+                {clockTime(unit)}
               </div>
             ))}
           </div>
@@ -112,7 +116,7 @@ const GanttChart = ({ scheduledTasks }) => {
                     }}
                   >
                     <span className="truncate px-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {task.startTime}-{task.endTime}h
+                      {clockTime(task.startTime)}–{clockTime(task.endTime)}
                     </span>
                   </div>
                 </div>

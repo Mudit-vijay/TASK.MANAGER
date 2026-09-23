@@ -38,7 +38,7 @@ const AdminDashboard = () => {
         try {
             await adminService.deleteUser(id);
             setUsers(users.filter(u => u._id !== id));
-        } catch (err) {
+        } catch {
             alert("Failed to delete user");
         }
     };
@@ -48,7 +48,7 @@ const AdminDashboard = () => {
         try {
             await adminService.deleteGroup(id);
             setGroups(groups.filter(g => g._id !== id));
-        } catch (err) {
+        } catch {
             alert("Failed to delete group");
         }
     };
@@ -58,7 +58,7 @@ const AdminDashboard = () => {
         try {
             await adminService.deleteTask(id);
             setTasks(tasks.filter(t => t._id !== id));
-        } catch (err) {
+        } catch {
             alert("Failed to delete task");
         }
     };

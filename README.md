@@ -159,6 +159,7 @@ Score = (priorityMultiplier × priority)
 - **Java** JDK 21
 - **Maven** (or use the included `mvnw` wrapper)
 - **MongoDB** Atlas connection string
+- **Algorithm.scheduler** checked out separately (the Java service is not in this repository)
 - **Docker** (optional, for containerized scheduler)
 
 ### Installation
@@ -181,7 +182,7 @@ npm run dev
 ```bash
 cd Gateway
 npm install
-node index
+node index.js
 # → http://localhost:8080
 ```
 
@@ -189,28 +190,28 @@ node index
 ```bash
 cd login_Services
 npm install
-node index
-# → http://localhost:4282
+node index.js
+# → http://localhost:5000
 ```
 
 #### 4. Task/Group Service
 ```bash
 cd starter
 npm install
-node app
+node app.js
 # → http://localhost:9000
 ```
 
 #### 5. Scheduling Engine
 ```bash
-cd Algorithm.scheduler
+cd ../Algorithm.scheduler
 ./mvnw spring-boot:run
 # → http://localhost:9001
 ```
 
 **Or with Docker:**
 ```bash
-cd Algorithm.scheduler
+cd ../Algorithm.scheduler
 docker build -t algorithm-scheduler .
 docker run -p 9001:9001 algorithm-scheduler
 ```
@@ -219,35 +220,13 @@ docker run -p 9001:9001 algorithm-scheduler
 
 ## 🔐 Environment Variables
 
-### Auth Service (`login_Services/.env`)
-```env
-MONGO_URI=mongodb+srv://<connection-string>
-JWT=<your-jwt-secret>
-BREVO_API_KEY=<brevo-smtp-api-key>
-SENDGRID_VERIFIED_EMAIL=<verified-sender-email>
-OTP_ENABLED=true
-PORT=4282
-```
-
-### Task Service (`starter/.env`)
-```env
-MONGO_URI=mongodb+srv://<connection-string>
-JWT=<your-jwt-secret>
-PORT=9000
-```
-
-### Frontend (`FRONTEND/.env`)
-```env
-VITE_API_URL=http://localhost:8080/api/v1
-```
-
-> In production, `VITE_API_URL` is omitted — the app defaults to the live Gateway URL.
+Copy each service's `.env.example` to `.env` and replace placeholders. Never commit `.env`. Set the same long random `JWT` secret on auth and task services. Auth cookies default to production (`Secure` and `SameSite=None`); set `NODE_ENV=development` only for local HTTP testing. The task service defaults to the Render scheduler URL but `SCHEDULER_SERVICE_URL` can override it. The frontend is built with the production Gateway and OAuth URLs by default. For local development, override `VITE_API_URL`, `VITE_OAUTH_URL`, gateway service URLs, and `CORS_ALLOWED_ORIGINS` with your local addresses. Restart Vite after changing `VITE_*` values.
 
 ---
 
 ## ☁️ Deployment
 
-All 6 services are deployed on **Render** as independent web services:
+The current production defaults target these **Render** services. Confirm the URLs and environment variables in your deployment before publishing a new build:
 
 | Service | URL | Runtime |
 |---|---|---|

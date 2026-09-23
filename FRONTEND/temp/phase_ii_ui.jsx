@@ -28,7 +28,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { groupService } from "../src/services/api.js";
+import { authService, groupService } from "../src/services/api.js";
 
 const phase_ii_ui = () => {
   const [workspaces, setWorkspaces] = useState([]);
@@ -46,20 +46,19 @@ const phase_ii_ui = () => {
   const [workEnd, setWorkEnd] = useState("17:00");
 
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
-  const [currentUserEmail, setCurrentUserEmail] = useState(() => {
-    const token = localStorage.getItem('token');
-    if (!token) return null;
-    try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        return payload.email;
-    } catch (e) { return null; }
-  });
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     localStorage.setItem("theme", isDarkMode ? "dark" : "light");
     if (isDarkMode) document.documentElement.classList.add("dark");
     else document.documentElement.classList.remove("dark");
   }, [isDarkMode]);
+
+  useEffect(() => {
+    authService.me()
+      .then(setCurrentUser)
+      .catch(() => setShowExpiryModal(true));
+  }, []);
 
   useEffect(() => {
     const handleExpiry = () => setShowExpiryModal(true);
@@ -74,7 +73,7 @@ const phase_ii_ui = () => {
       name: "",
       description: "",
       workspaceType: "Personal",
-      members: [{ email: "" }],
+      members: [{ email: "", role: "MEMBER" }],
     },
   });
 
@@ -87,9 +86,12 @@ const phase_ii_ui = () => {
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } finally {
+      navigate("/");
+    }
   };
 
   const fetchWorkspaces = async () => {
@@ -98,7 +100,7 @@ const phase_ii_ui = () => {
       const response = await groupService.getGroups();
       if (response.data) {
         setWorkspaces(response.data.map(ws => {
-          const isShared = ws.members && ws.members.includes(currentUserEmail);
+          const isShared = ws.myRole !== "OWNER";
           return {
             ...ws,
             id: ws._id,
@@ -115,7 +117,7 @@ const phase_ii_ui = () => {
     }
   };
 
-  useEffect(() => { fetchWorkspaces(); }, []);
+  useEffect(() => { if (currentUser) fetchWorkspaces(); }, [currentUser]);
 
   const timeToMinutes = (timeStr) => {
     const [hrs, mins] = timeStr.split(':').map(Number);
@@ -152,6 +154,7 @@ const phase_ii_ui = () => {
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
       console.error("Scheduling failed:", err);
+      setError(err.response?.data?.message || err.response?.data?.msg || "Scheduling failed.");
     } finally {
       setSchedulingId(null);
     }
@@ -166,8 +169,10 @@ const phase_ii_ui = () => {
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      const memberEmails = data.workspaceType === "Personal" ? [] : data.members.map(m => m.email).filter(Boolean);
-      await groupService.createGroups(data.name.trim(), data.description.trim(), data.workspaceType, memberEmails);
+      const members = data.workspaceType === "Personal" ? [] : data.members
+        .filter(member => member.email.trim())
+        .map(member => ({ email: member.email.trim(), role: member.role || "MEMBER" }));
+      await groupService.createGroups(data.name.trim(), data.description.trim(), data.workspaceType, members);
       setSuccess("Workspace Ready for Deployment!");
       await fetchWorkspaces();
       setTimeout(() => {
@@ -177,6 +182,7 @@ const phase_ii_ui = () => {
       }, 1500);
     } catch (err) {
       console.error("Error creating workspace:", err);
+      setError(err.response?.data?.message || err.response?.data?.msg || "Could not create the workspace.");
     } finally {
       setLoading(false);
     }
@@ -265,7 +271,7 @@ const phase_ii_ui = () => {
              <span className="text-[10px] font-black uppercase text-slate-500 tracking-tight">{ws.memberCount} Members</span>
           </div>
           
-          <button 
+          {["OWNER", "ADMIN"].includes(ws.myRole) && <button
              onClick={(e) => handleSchedule(e, ws.id)}
              className={`flex items-center gap-2.5 px-5 py-2.5 rounded-2xl transition-all duration-300 font-black text-[10px] uppercase tracking-widest ${
                 schedulingId === ws.id 
@@ -275,7 +281,7 @@ const phase_ii_ui = () => {
           >
              {schedulingId === ws.id ? <Activity className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4 fill-current" />}
              Optimize
-          </button>
+          </button>}
         </div>
       </div>
     </div>
@@ -297,6 +303,8 @@ const phase_ii_ui = () => {
           </div>
 
           <div className="flex items-center gap-4 animate-in slide-in-from-right-8 duration-700">
+            <button onClick={() => navigate("/personal")} className="px-5 py-4 rounded-2xl bg-indigo-600 text-white text-xs font-bold">My tasks</button>
+            <button onClick={() => navigate("/audit")} className="px-5 py-4 rounded-2xl border border-slate-700 text-xs font-bold">Audit log</button>
             <div className="relative group">
               <button 
                 onClick={() => setShowSettings(!showSettings)} 
@@ -493,7 +501,7 @@ const phase_ii_ui = () => {
                 <div className="space-y-8 animate-in slide-in-from-top-6 duration-500">
                     <div className="flex justify-between items-center px-1">
                         <label className="text-xs font-black uppercase tracking-widest text-indigo-500">Member Manifest</label>
-                        <button type="button" onClick={() => append({ email: "" })} className="text-[10px] font-black uppercase bg-indigo-500/10 text-indigo-500 px-5 py-2 rounded-2xl hover:bg-indigo-500 hover:text-white transition-all flex items-center gap-2"><UserPlus className="w-3.5 h-3.5" /> Append Member</button>
+                        <button type="button" onClick={() => append({ email: "", role: "MEMBER" })} className="text-[10px] font-black uppercase bg-indigo-500/10 text-indigo-500 px-5 py-2 rounded-2xl hover:bg-indigo-500 hover:text-white transition-all flex items-center gap-2"><UserPlus className="w-3.5 h-3.5" /> Append Member</button>
                     </div>
                     <div className="space-y-4">
                         {fields.map((field, idx) => (
@@ -502,6 +510,10 @@ const phase_ii_ui = () => {
                                     <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                                     <input {...register(`members.${idx}.email`)} className={`w-full pl-14 pr-6 py-5 rounded-[1.5rem] border text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all ${isDarkMode ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-100"}`} placeholder="teammate@company.com" />
                                 </div>
+                                <select {...register(`members.${idx}.role`)} className="bg-slate-800 text-white rounded-xl p-4 text-xs font-bold" aria-label={`Role for member ${idx + 1}`}>
+                                  <option value="MEMBER">Member</option>
+                                  <option value="ADMIN">Group admin</option>
+                                </select>
                                 <button type="button" onClick={() => remove(idx)} className="p-5 text-red-500/50 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all"><Trash2 className="w-5 h-5" /></button>
                             </div>
                         ))}

@@ -1,27 +1,28 @@
 import mongoose from "mongoose";
 import Group from "../models/Group.js";
-import jwt from "jsonwebtoken";
 import Task from "../models/tasks.js";
 import axios from "axios";
+import AuditLog from "../models/AuditLogs.js";
+import ScheduleRun from "../models/ScheduleRun.js";
+import { groupRole, normalizeEmail } from "../middlewares/membership.js";
 
 
 export const getAllGroups = async (req, res) => {
-    const token = req.headers["authorization"]; 
-
     try {
-        const decoded = jwt.verify(token, process.env.JWT);
-        const userID = decoded.id;
-        const userEmail = decoded.email; // Assuming email is in the JWT
-        
-        // Find groups created by the user OR where the user is a member
+        const userID = req.user.id;
+        const userEmail = normalizeEmail(req.user.email);
+        const escapedEmail = userEmail.replace(/[.*+?^${}()|[\]\\]/g, character => `\\${character}`);
         const groups = await Group.find({
             $or: [
                 { user: userID },
-                { members: userEmail }
+                { "memberUsers.user": userID },
+                { members: new RegExp(`^${escapedEmail}$`, "i") }
             ]
         });
-        
-        res.status(200).json(groups);
+        res.status(200).json(groups.map(group => ({
+            ...group.toObject(),
+            myRole: groupRole(group, req.user)
+        })));
     } catch (err) {
         console.error("Error in getAllGroups:", err.message);
         res.status(500).json({ msg: "Server error", error: err.message });
@@ -30,18 +31,38 @@ export const getAllGroups = async (req, res) => {
 
 export const createGroups = async (req, res) => {
     const { name, description, workspaceType, members } = req.body;
-    const token = req.cookies.token;
-    if (!token) return res.status(401).json({ msg: "No token found" });
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT);
-        const userId = decoded.id;
+        const userId = req.user.id;
+        const requested = Array.isArray(members) ? members : [];
+        const normalized = requested.map(member => ({
+            email: normalizeEmail(typeof member === "string" ? member : member?.email),
+            role: typeof member === "string" ? "MEMBER" : member?.role || "MEMBER"
+        })).filter(member => member.email);
+        if (normalized.some(member => !/^\S+@\S+\.\S+$/.test(member.email) || !["ADMIN", "MEMBER"].includes(member.role))) {
+            return res.status(400).json({ msg: "Each group member needs a valid email and role." });
+        }
+        if (new Set(normalized.map(member => member.email)).size !== normalized.length) {
+            return res.status(400).json({ msg: "A person can only be added once to a group." });
+        }
+        const ownerEmail = normalizeEmail(req.user.email);
+        if (normalized.some(member => member.email === ownerEmail)) {
+            return res.status(400).json({ msg: "The group owner is already a member." });
+        }
+        const users = normalized.length === 0 ? [] : await mongoose.connection.collection("customers")
+            .find({ email: { $in: normalized.map(member => member.email) } }, { projection: { _id: 1, email: 1 } })
+            .collation({ locale: "en", strength: 2 }).toArray();
+        const byEmail = new Map(users.map(user => [normalizeEmail(user.email), user]));
+        if (normalized.some(member => !byEmail.has(member.email))) {
+            return res.status(400).json({ msg: "Every group member must have an account before being added." });
+        }
         const newGroup = await Group.create({ 
             name, 
             description, 
             user: userId,
             workspaceType: workspaceType || "Personal",
-            members: members || []
+            members: normalized.map(member => member.email),
+            memberUsers: normalized.map(member => ({ user: byEmail.get(member.email)._id, role: member.role }))
         });
         res.status(201).json(newGroup);
     } catch (err) {
@@ -57,10 +78,8 @@ export const updateGroup = async (req, res) => {
         return res.status(400).json({ msg: "Invalid group ID format" });
     }
 
-    const token = req.headers['authorization'];
     try {
-        const decoded = jwt.verify(token, process.env.JWT);
-        const user_id = decoded.id;
+        const user_id = req.user.id;
         
         const existingGroup = await Group.findOne({
             user: user_id,
@@ -122,57 +141,113 @@ export const deleteGroupAdmin = async (req, res) => {
     }
 };
 
-/**
- * Computes a relative deadline (in minutes from "now") for the scheduler.
- * Ensures a minimum of 100 minutes so the algorithm always has room to schedule.
- */
+/** Computes a relative deadline in minutes from now. */
 const computeRelativeDeadline = (deadlineDate, nowInMinutes) => {
     const taskDeadline = deadlineDate
         ? Math.floor(new Date(deadlineDate).getTime() / 60000)
         : (nowInMinutes + 1440); // Default: 24 hours from now
-    return Math.max(100, taskDeadline - nowInMinutes);
+    return Math.max(0, taskDeadline - nowInMinutes);
 };
 
-/**
- * Maps a single populated Mongoose dependency document to the flat Java TaskModel
- * shape that the algorithm expects. Only 1 level deep — the algorithm only needs
- * `dependency.getTaskId()` to compare against its completedTaskIds set.
- */
-const mapDependencyToJavaModel = (dep, groupId, relativeDeadline) => ({
-    taskId: dep._id.toString(),
-    name: dep.name,
-    description: "",
-    priority: dep.priority || "Medium",
-    estimated_duration: dep.estimated_duration || 30,
-    completed: dep.completed || false,
-    deadline: relativeDeadline,
-    taskDependency: [], // Algorithm only needs 1 level deep
-    userId: 1,
-    userName: "User",
-    groupId: groupId.toString()
-});
+const hasDependencyCycle = (tasks) => {
+    const byId = new Map(tasks.map(task => [String(task._id), task]));
+    const visiting = new Set();
+    const visited = new Set();
+    const visit = (taskId) => {
+        if (visiting.has(taskId)) return true;
+        if (visited.has(taskId)) return false;
+        visiting.add(taskId);
+        const task = byId.get(taskId);
+        for (const dependency of task?.dependency || []) {
+            const dependencyId = String(dependency._id || dependency);
+            if (!byId.has(dependencyId) || visit(dependencyId)) return true;
+        }
+        visiting.delete(taskId);
+        visited.add(taskId);
+        return false;
+    };
+    return [...byId.keys()].some(visit);
+};
+
+export const getGroupMembers = async (req, res) => {
+    try {
+        const group = req.group || await Group.findById(req.params.groupId);
+        if (!group) return res.status(404).json({ msg: "Group not found" });
+
+        const memberEmails = [...new Set((group.members || []).map(normalizeEmail).filter(Boolean))];
+        const memberIds = (group.memberUsers || []).map(member => member.user);
+        const users = await mongoose.connection.collection("customers").find({
+            $or: [
+                { _id: { $in: [group.user, ...memberIds] } },
+                { email: { $in: memberEmails } }
+            ]
+        }, { projection: { _id: 1, name: 1, email: 1 } }).collation({ locale: "en", strength: 2 }).toArray();
+
+        const members = users.map(user => ({
+            id: String(user._id),
+            name: user.name,
+            email: user.email,
+            role: groupRole(group, { id: user._id, email: user.email })
+        }));
+        res.status(200).json({ members });
+    } catch (err) {
+        res.status(500).json({ msg: "Could not load group members." });
+    }
+};
+
+export const getAuditLogs = async (req, res) => {
+    try {
+        const ownedGroups = await Group.find({
+            $or: [{ user: req.user.id }, { memberUsers: { $elemMatch: { user: req.user.id, role: "ADMIN" } } }]
+        }).distinct("_id");
+        const logs = await AuditLog.find({
+            $or: [
+                { performedBy: req.user.id },
+                { groupId: { $in: ownedGroups } }
+            ]
+        }).sort({ createdAt: -1 }).limit(200).lean();
+        res.status(200).json({ logs });
+    } catch (err) {
+        res.status(500).json({ msg: "Could not load audit logs." });
+    }
+};
+
+const toPositiveInteger = (value, fallback) => {
+    const parsed = Number(value);
+    return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback;
+};
 
 export const scheduleGroupTasks = async (req, res) => {
     const { groupId } = req.params;
     
     try {
-        console.log(`[Scheduler] Fetching tasks for groupId: ${groupId}`);
-
-        // Populate dependency so we have the full objects for the Java mapper
         const tasks = await Task.find({ groupId })
             .populate('dependency', '_id name priority estimated_duration deadline completed');
         
         if (!tasks || tasks.length === 0) {
-            console.log(`[Scheduler] No tasks found for group: ${groupId}`);
             return res.status(404).json({ message: "No tasks found for this group" });
         }
 
-        console.log(`[Scheduler] Found ${tasks.length} tasks. Mapping to Java format...`);
+        if (hasDependencyCycle(tasks)) {
+            await AuditLog.create({
+                action: "SCHEDULE", performedBy: req.user.id, groupId,
+                details: { scope: "GROUP", outcome: "CIRCULAR_DEPENDENCY" }
+            });
+            return res.status(409).json({ message: "Cannot schedule a group with circular dependencies." });
+        }
+
+        const pendingTasks = tasks.filter(task => !task.completed);
+        if (pendingTasks.length === 0) {
+            await AuditLog.create({
+                action: "SCHEDULE", performedBy: req.user.id, groupId,
+                details: { scope: "GROUP", outcome: "NO_PENDING_TASKS", pendingTaskCount: 0 }
+            });
+            return res.status(200).json([]);
+        }
 
         const nowInMinutes = Math.floor(Date.now() / 60000);
 
-        // Map MongoDB tasks to Java TaskModel format with populated dependencies
-        const formattedTasks = tasks.map(t => {
+        const formattedTasks = pendingTasks.map(t => {
             const relativeDeadline = computeRelativeDeadline(t.deadline, nowInMinutes);
             
             return {
@@ -181,27 +256,26 @@ export const scheduleGroupTasks = async (req, res) => {
                 description: t.description || "",
                 priority: t.priority || "Medium",
                 estimated_duration: t.estimated_duration || 30,
-                completed: t.completed || false,
+                completed: false,
                 deadline: relativeDeadline,
-                taskDependency: (t.dependency || []).map(dep =>
-                    mapDependencyToJavaModel(dep, groupId, computeRelativeDeadline(dep.deadline, nowInMinutes))
-                ),
-                userId: 1, 
-                userName: "User",
+                taskDependency: (t.dependency || [])
+                    .filter(dep => !dep.completed)
+                    .map(dep => ({ taskId: String(dep._id), taskDependency: [] })),
+                userId: 0,
+                userName: t.userName || "User",
                 groupId: groupId.toString()
             };
         });
 
-        // Get custom constraints from request body
-        const { startTime = 0, endTime = 1440, totalHours = 1440 } = req.body;
+        const startTime = toPositiveInteger(req.body.startTime, 0);
+        const endTime = toPositiveInteger(req.body.endTime, 1440);
+        const totalHours = toPositiveInteger(req.body.totalHours, endTime - startTime);
+        if (endTime <= startTime || totalHours <= 0) {
+            return res.status(400).json({ message: "Scheduling time range must be positive." });
+        }
 
-        console.log(`[Scheduler] Using Constraints - Start: ${startTime}, End: ${endTime}, Total: ${totalHours}`);
-        console.log(`[Scheduler] Sample Task Deadline: ${formattedTasks[0].deadline}`);
-        console.log(`[Scheduler] Dependencies mapped: ${formattedTasks.filter(t => t.taskDependency.length > 0).length} tasks have dependencies`);
-        console.log(`[Scheduler] Sending request to Java Spring Boot (Live URL)...`);
-        
-        // Call Java Scheduler Service with correct structure
-        const response = await axios.post("https://algorithm-scheduler.onrender.com/api/v1/scheduler/generate", {
+        const schedulerUrl = process.env.SCHEDULER_SERVICE_URL || "https://algorithm-scheduler.onrender.com";
+        const response = await axios.post(`${schedulerUrl}/api/v1/scheduler/generate`, {
             tasks: formattedTasks,
             constraints: {
                 startTime, 
@@ -216,24 +290,48 @@ export const scheduleGroupTasks = async (req, res) => {
                 deadlineMultiplier: 1.0,
                 dependencyMultiplier: 1.0
             },
-            algorithmType: "backtracking"
-        });
+            algorithmType: "branchAndBound"
+        }, { timeout: 15000 });
 
-        console.log(`[Scheduler] Received response from Java. Status: ${response.status}`);
-        console.log(`[Scheduler] Schedule length: ${response.data ? (Array.isArray(response.data) ? response.data.length : 'object') : 0}`);
+        if (!Array.isArray(response.data) || response.data.length !== pendingTasks.length) {
+            await AuditLog.create({
+                action: "SCHEDULE",
+                performedBy: req.user.id,
+                groupId,
+                details: { scope: "GROUP", outcome: "INFEASIBLE", pendingTaskCount: pendingTasks.length }
+            });
+            return res.status(422).json({ message: "No feasible schedule exists for every pending task." });
+        }
+
+        const entries = response.data.map(entry => ({
+            taskId: entry.task?.taskId,
+            name: entry.task?.name,
+            priority: entry.task?.priority,
+            dependencyIds: (entry.task?.taskDependency || []).map(dependency => dependency.taskId),
+            startTime: entry.startTime,
+            endTime: entry.endTime
+        }));
+        const scheduleRun = await ScheduleRun.create({
+            scope: "GROUP",
+            groupId,
+            requestedBy: req.user.id,
+            taskIds: pendingTasks.map(task => task._id),
+            constraints: { startTime, endTime, totalHours },
+            algorithmType: "branchAndBound",
+            entries
+        });
+        await AuditLog.create({
+            action: "SCHEDULE",
+            performedBy: req.user.id,
+            groupId,
+            details: { scope: "GROUP", outcome: "SCHEDULED", scheduleRunId: scheduleRun._id, taskCount: entries.length }
+        });
 
         res.status(200).json(response.data);
     } catch (err) {
         console.error("Scheduling error:", err.message);
         
-        // Handle JWT errors specifically
-        if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError' || err.message === 'jwt expired') {
-            return res.status(401).json({ message: "Session expired", error: err.message });
-        }
-
-        res.status(500).json({ 
-            message: "Failed to schedule tasks", 
-            error: err.response?.data || err.message 
-        });
+        const status = err.response?.status === 400 ? 422 : 502;
+        res.status(status).json({ message: "Scheduler service could not create a schedule." });
     }
 };

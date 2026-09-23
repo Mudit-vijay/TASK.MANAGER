@@ -23,12 +23,9 @@ const LoginSignup = () => {
     setIsLoadingg(true);
     try {
       const res = await authService.login(values.email, values.password);
-      if (res.data.token) {
-        localStorage.setItem("token", res.data.token);
-      }
       dispatch(setEmail(email));
-      dispatch(setName(res.data.name));
-      dispatch(setUserId(res.data._id));
+      dispatch(setName(res.data.user.name));
+      dispatch(setUserId(res.data.user._id));
       navigate(`/taskManager`);
     } catch (err) {
       alert("Login failed. Please check your credentials or try again after some time.");
@@ -49,14 +46,13 @@ const LoginSignup = () => {
     setIsLoading(true);
     try {
       const res = await authService.createUser(values);
-      if (res && res.token) {
-        localStorage.setItem("token", res.token);
+      if (res?.authenticated) {
         dispatch(setName(name));
         dispatch(setEmail(email));
-        dispatch(setUserId(res._id));
-        navigate(`/phase2/${res._id}`);
+        dispatch(setUserId(res.user._id));
+        navigate(`/taskManager`);
       } else {
-        navigate(`/verify-otp/${res._id || 'verify'}`);
+        navigate(`/verify-otp/${res?.user?._id || 'verify'}`);
       }
     } catch (err) {
       alert("Failed to create user. Please try again.");
@@ -66,7 +62,7 @@ const LoginSignup = () => {
   };
   const handleGoogleLogin = async () => {
     window.location.href =
-      "https://oauth-service-fyrc.onrender.com/api/stateless-oauth/google";
+      `${import.meta.env.VITE_OAUTH_URL || "https://oauth-service-fyrc.onrender.com"}/api/stateless-oauth/google`;
   };
 
   // ----- Styling -----

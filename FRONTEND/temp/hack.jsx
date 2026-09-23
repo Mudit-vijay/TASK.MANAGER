@@ -10,15 +10,10 @@ function OAuthSuccess() {
     const handleOAuth = async () => {
       if (!token) return;
       try {
-        localStorage.setItem("token", token);
-
-        const res = await authService.OauthCreation(token);
-        const id = res.data.data.id;
-        localStorage.removeItem("token");
-        localStorage.setItem("token", res.data.data.token);
+        await authService.OauthCreation(token);
         navigate(`/taskManager`);
-      } catch (err) {
-        navigate('/login');
+      } catch {
+        navigate('/');
       }
     };
     handleOAuth();

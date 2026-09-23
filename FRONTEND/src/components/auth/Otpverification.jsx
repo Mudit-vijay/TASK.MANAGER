@@ -11,7 +11,6 @@ const OtpVerification = () => {
   // const otp = useSelector((state) => state.otp.otp);
   const email = useSelector((state) => state.auth.email);
   const [OTP, setOTP] = useState(""); // user input
-  const id = useSelector((sate) => sate);
   const verifyOTP = async () => {
 
     const res = await authService.otpVerification(OTP, email);

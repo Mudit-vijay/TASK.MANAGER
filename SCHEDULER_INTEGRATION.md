@@ -1,0 +1,9 @@
+# Scheduler integration
+
+The starter task service defaults to `https://algorithm-scheduler.onrender.com` (without `/api/v1/scheduler/generate`). Override `SCHEDULER_SERVICE_URL` if that service moves or a private service URL is available. The task service sends task names, descriptions, priorities, durations, deadlines and dependency IDs to that destination.
+
+The gateway defaults to the current Render URLs for the task, auth, and OAuth services. Override `STARTER_SERVICE_URL`, `LOGIN_SERVICE_URL`, and `OAUTH_SERVICE_URL` when those services move or for local testing. The frontend defaults to the Render gateway URL; override `VITE_API_URL` at build time if the gateway moves. Set `CORS_ALLOWED_ORIGINS` to the exact frontend origin on the gateway, auth, and task services. The auth and task services must have the same `JWT` secret. Auth cookies default to secure cross-site mode; set `NODE_ENV=development` only for local HTTP testing.
+
+The browser calls `POST /api/v1/task/personal/schedule` for the signed-in user's assigned tasks and `POST /api/v1/group/groups/:groupId/schedule` for scheduling by a group owner or group admin. Both accept `{ "startTime": 540, "endTime": 1020, "totalHours": 480 }` in minutes. The task service loads tasks and dependencies from MongoDB, calls the configured scheduler, stores a `ScheduleRun`, and writes a `SCHEDULE` audit event. Browser clients call only the task service through the gateway.
+
+Personal tasks: `GET /api/v1/task/personal/tasks`. A signed-in assignee completes a task with `PATCH /api/v1/task/:groupId/tasks/:taskId/complete`. The persisted Gantt data is available at `GET /api/v1/task/personal/schedule/latest` and `GET /api/v1/group/groups/:groupId/schedule/latest`. Audit history: `GET /api/v1/group/audit`. Group owner and admin assignable accounts: `GET /api/v1/group/groups/:groupId/members`. New group members must have registered accounts before they can be added.

@@ -1,0 +1,29 @@
+# Local credentials and overrides
+.env
+.env.*
+!.env.example
+!**/.env.example
+*.pem
+*.p12
+*.pfx
+*.jks
+id_rsa
+id_ed25519
+
+# Dependencies, caches, and generated output
+**/node_modules/
+**/dist/
+**/build/
+**/coverage/
+**/target/
+.npm-cache/
+.local-data/
+.vite/
+*.log
+npm-debug.log*
+
+# Editor and operating system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

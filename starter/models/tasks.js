@@ -39,10 +39,24 @@ const TaskSchema = new mongoose.Schema({
             trim: true
         }
     ],
+    // userId is retained while existing task documents are migrated. New code uses
+    // createdBy and assignedTo so creator and assignee are never conflated.
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "customer",
         required: [true, "must provide userId"],
+        index: true
+    },
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "customer",
+        required: [true, "must provide createdBy"],
+        index: true
+    },
+    assignedTo: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "customer",
+        required: [true, "must provide assignedTo"],
         index: true
     },
     userName: {

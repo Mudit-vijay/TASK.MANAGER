@@ -31,7 +31,8 @@ import {
   Link2,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { groupService, taskSERVICES } from "../src/services/api.js";
+import { authService, groupService, taskSERVICES } from "../src/services/api.js";
+import GanttChart from "../src/components/task-manager/GanttChart.jsx";
 
 const GroupsView = () => {
   const { id } = useParams();
@@ -45,6 +46,11 @@ const GroupsView = () => {
   const [sortBy, setSortBy] = useState("default");
   const [success, setSuccess] = useState("");
   const [scheduledTasks, setScheduledTasks] = useState(null);
+  const [groupMembers, setGroupMembers] = useState([]);
+  const [canManageGroup, setCanManageGroup] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [latestSchedule, setLatestSchedule] = useState(null);
+  const [actionError, setActionError] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
 
   // Dependency picker state
@@ -84,9 +90,12 @@ const GroupsView = () => {
     else document.documentElement.classList.remove("dark");
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } finally {
+      navigate("/");
+    }
   };
 
   const fetchTasks = async () => {
@@ -103,6 +112,22 @@ const GroupsView = () => {
 
   useEffect(() => {
     if (id) fetchTasks();
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    groupService.getMembers(id)
+      .then(members => { setGroupMembers(members); setCanManageGroup(true); })
+      .catch(() => { setGroupMembers([]); setCanManageGroup(false); });
+  }, [id]);
+
+  useEffect(() => {
+    authService.me().then(setCurrentUser).catch(() => setCurrentUser(null));
+  }, []);
+
+  useEffect(() => {
+    if (!id) return;
+    groupService.getLatestSchedule(id).then(setLatestSchedule).catch(() => setLatestSchedule(null));
   }, [id]);
 
   const timeToMinutes = (timeStr) => {
@@ -126,6 +151,7 @@ const GroupsView = () => {
       });
 
       if (result && Array.isArray(result) && result.length > 0) {
+        setLatestSchedule(await groupService.getLatestSchedule(id));
         const adjustedResults = result.map(st => ({
           ...st,
           startTime: st.startTime + startMins,
@@ -139,6 +165,7 @@ const GroupsView = () => {
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
       console.error("Scheduling failed:", err);
+      setActionError(err.response?.data?.message || err.response?.data?.msg || "Scheduling failed.");
     } finally {
       setScheduling(false);
     }
@@ -183,7 +210,8 @@ const GroupsView = () => {
       await taskSERVICES.createTASK(id, {
         ...data,
         name: data.name.trim(),
-        dependency: selectedDeps
+        dependency: selectedDeps,
+        assignedTo: data.assignedTo || undefined
       });
       setShowForm(false);
       reset();
@@ -194,6 +222,7 @@ const GroupsView = () => {
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
       console.error("Error creating task:", err);
+      setActionError(err.response?.data?.message || err.response?.data?.msg || "Could not create the task.");
     }
   };
 
@@ -213,10 +242,21 @@ const GroupsView = () => {
 
   const toggleStatus = async (taskId, currentStatus) => {
     try {
-      await taskSERVICES.updateTASK(id, taskId, { completed: !currentStatus });
+      if (!currentStatus) await taskSERVICES.completeAssignedTask(id, taskId);
       fetchTasks();
     } catch (err) {
-      console.error("Error updating task:", err);
+      setActionError(err.response?.data?.msg || "Could not complete task.");
+    }
+  };
+
+  const assignTask = async (taskId, assignedTo) => {
+    try {
+      setActionError("");
+      await taskSERVICES.updateTASK(id, taskId, { assignedTo });
+      await fetchTasks();
+      setSuccess("Task assignment updated.");
+    } catch (err) {
+      setActionError(err.response?.data?.msg || "Could not assign task.");
     }
   };
 
@@ -272,7 +312,7 @@ const GroupsView = () => {
               )}
             </div>
 
-            <button
+            {canManageGroup && <button
               onClick={handleSchedule}
               disabled={scheduling}
               className={`px-8 py-5 rounded-[2rem] flex items-center gap-3 transition-all font-black text-xs uppercase tracking-widest shadow-xl ${
@@ -280,15 +320,15 @@ const GroupsView = () => {
               }`}
             >
               {scheduling ? <Activity className="w-6 h-6 animate-spin" /> : <><Zap className="w-6 h-6 fill-current" /> AI Optimize</>}
-            </button>
+            </button>}
 
             <button onClick={toggleTheme} className={`p-5 rounded-[2rem] border transition-all ${isDarkMode ? "bg-slate-900 border-slate-800 text-yellow-400" : "bg-white border-slate-100 text-slate-400"}`}>
               {isDarkMode ? <Sun className="w-7 h-7" /> : <Moon className="w-7 h-7" />}
             </button>
 
-            <button onClick={() => setShowForm(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-5 rounded-[2rem] flex items-center gap-3 font-black text-xs uppercase tracking-widest shadow-[0_15px_40px_-10px_rgba(79,70,229,0.4)] transition-all active:scale-95">
+            {canManageGroup && <button onClick={() => setShowForm(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-5 rounded-[2rem] flex items-center gap-3 font-black text-xs uppercase tracking-widest shadow-[0_15px_40px_-10px_rgba(79,70,229,0.4)] transition-all active:scale-95">
               <Plus className="w-6 h-6 stroke-[3px]" /> Add Task
-            </button>
+            </button>}
           </div>
         </div>
 
@@ -339,6 +379,11 @@ const GroupsView = () => {
         )}
 
         {/* Task Grid */}
+        {latestSchedule && <section className="rounded-[2rem] border border-slate-700 bg-slate-900 p-6">
+          <h2 className="font-bold text-white">Saved group schedule · {new Date(latestSchedule.createdAt).toLocaleString()}</h2>
+          <GanttChart scheduledTasks={latestSchedule.tasks} startTime={latestSchedule.constraints?.startTime || 0} />
+        </section>}
+        {actionError && <p role="alert" className="text-red-500 font-bold">{actionError}</p>}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
           {loading ? (
             <div className="col-span-full py-40 text-center"><div className="w-16 h-16 border-[6px] border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div></div>
@@ -385,6 +430,17 @@ const GroupsView = () => {
                         <span className="text-[10px] text-amber-500 font-bold uppercase tracking-widest">Blocked by {task.dependency.length} task(s)</span>
                       </div>
                     )}
+                    <div className="mt-4 text-xs text-slate-400">
+                      <span className="font-bold">Assigned to: </span>
+                      {canManageGroup ? <select
+                        aria-label={`Assign ${task.name}`}
+                        value={String(task.assignedTo || task.userId || "")}
+                        onChange={event => assignTask(task._id, event.target.value)}
+                        className="bg-slate-800 text-white rounded px-2 py-1 max-w-full"
+                      >
+                        {groupMembers.map(member => <option key={member.id} value={member.id}>{member.name || member.email}</option>)}
+                      </select> : <span>{groupMembers.find(member => member.id === String(task.assignedTo || task.userId))?.name || task.userName}</span>}
+                    </div>
                 </div>
 
                 <div className={`mt-auto pt-8 border-t relative z-10 flex justify-between items-center ${isDarkMode ? "border-slate-800" : "border-slate-50"}`}>
@@ -396,6 +452,8 @@ const GroupsView = () => {
                     <Calendar className="w-3.5 h-3.5" />
                     <span>{task.deadline ? new Date(task.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : "No Deadline"}</span>
                   </div>
+                  {!task.completed && String(task.assignedTo || task.userId) === String(currentUser?.id || currentUser?._id) &&
+                    <button onClick={() => toggleStatus(task._id, task.completed)} className="text-[10px] font-bold text-emerald-500">Complete</button>}
                 </div>
               </div>
           ))}
@@ -475,6 +533,15 @@ const GroupsView = () => {
                      <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Deadline Horizon</label>
                      <input type="datetime-local" {...register("deadline")} className={`w-full p-6 rounded-[2rem] border font-black text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all ${isDarkMode ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-100"}`} />
                   </div>
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase text-slate-500 ml-1">Assigned to</label>
+                  <select {...register("assignedTo")} className={`w-full p-6 rounded-[2rem] border font-black text-sm outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all ${isDarkMode ? "bg-slate-950 border-slate-800 text-white" : "bg-slate-50 border-slate-100"}`}>
+                    <option value="">Assign to me</option>
+                    {groupMembers.map(member => (
+                      <option key={member.id} value={member.id}>{member.name || member.email} ({member.role.toLowerCase()})</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-3">

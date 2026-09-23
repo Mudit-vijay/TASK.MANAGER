@@ -5,29 +5,31 @@ const compression = require('compression');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const app = express();
+const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || "https://task-manager-1-5jlg.onrender.com")
+    .split(',').map(origin => origin.trim()).filter(Boolean);
 
 app.use(helmet());
 app.use(compression());
 
 app.use(cors({
-    origin: [
-        "https://task-manager-1-5jlg.onrender.com",
-        "https://task-manager-xp1g.onrender.com",
-        "https://backend-a-tvul.onrender.com",
-        "https://backend-b-wxdw.onrender.com",
-        "https://algorithm-scheduler.onrender.com",
-        "https://oauth-service-fyrc.onrender.com",
-        "http://localhost:5173",
-        "http://localhost:8080"
-    ],
+    origin: allowedOrigins,
     credentials: true,
 }));
+
+app.use((req, res, next) => {
+    const unsafeMethod = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method);
+    const origin = req.get('origin');
+    if (unsafeMethod && origin && !allowedOrigins.includes(origin)) {
+        return res.status(403).json({ msg: 'Request origin is not allowed.' });
+    }
+    next();
+});
 
 // Proxy for Authentication Service
 const authProxy = createProxyMiddleware({
     target: process.env.LOGIN_SERVICE_URL || 'https://backend-b-wxdw.onrender.com',
     changeOrigin: true,
-    pathFilter: ['/api/v1/login', '/api/v1/createUser', '/api/v1/oauthcreation', '/api/v1/otpverification', '/api/v1/admin/users'],
+    pathFilter: ['/api/v1/login', '/api/v1/createUser', '/api/v1/oauthcreation', '/api/v1/otpVerification', '/api/v1/me', '/api/v1/logout', '/api/v1/admin/users'],
     on: {
         error: (err, req, res) => {
             console.error('Auth Proxy Error:', err.message);
@@ -43,13 +45,6 @@ const taskGroupProxy = createProxyMiddleware({
     pathFilter: ['/api/v1/task', '/api/v1/group', '/api/v1/groups'],
 });
 
-// Proxy for Algorithm Scheduler Service
-const schedulerProxy = createProxyMiddleware({
-    target: process.env.SCHEDULER_SERVICE_URL || 'https://algorithm-scheduler.onrender.com',
-    changeOrigin: true,
-    pathFilter: ['/api/v1/scheduler'],
-});
-
 // Proxy for OAuth Service
 const oauthProxy = createProxyMiddleware({
     target: process.env.OAUTH_SERVICE_URL || 'https://oauth-service-fyrc.onrender.com',
@@ -59,7 +54,6 @@ const oauthProxy = createProxyMiddleware({
 
 app.use(authProxy);
 app.use(taskGroupProxy);
-app.use(schedulerProxy);
 app.use(oauthProxy);
 
 // Basic health check route
