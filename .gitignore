@@ -25,5 +25,6 @@ npm-debug.log*
 # Editor and operating system files
 .idea/
 .vscode/
+OAUTH-SERVICE/
 .DS_Store
 Thumbs.db
